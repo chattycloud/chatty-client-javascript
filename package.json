@@ -1,0 +1,22 @@
+{
+  "name": "chatty-client",
+  "version": "0.0.7",
+  "description": "Front side client sdk to use chatty cloud service",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": "https://github.com/chatty-cloud/chatty-client-javascript.git",
+  "bugs": {
+    "url": "https://github.com/chatty-cloud/chatty-client-javascript/issues",
+    "email": "administrator@chatty-cloud.com"
+  },
+  "homepage": "https://www.chatty-cloud.com",
+  "keywords": [],
+  "author": "chatty-client<administrator@chatty-cloud.com>",
+  "license": "MIT",
+  "dependencies": {
+    "socket.io-client": "^4.1.3"
+  }
+}
