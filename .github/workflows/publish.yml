@@ -13,8 +13,8 @@ jobs:
         with:
           node-version: 16.x
           registry-url: https://registry.npmjs.org
-      - run: git config --global user.email "landgrenunit@gmail.com"
-      - run: git config --global user.name "landgrenunit"
+      - run: git config --global user.email "nunonam@gmail.com"
+      - run: git config --global user.name "nunonam"
       - run: npm version patch
       - run: git push origin main --tags
       - uses: actions/upload-artifact@v2
