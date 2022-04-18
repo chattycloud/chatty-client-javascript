@@ -7,9 +7,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "repository": "https://github.com/chatty-cloud/chatty-client-javascript.git",
+  "repository": "https://github.com/chattycloud/chatty-client-javascript",
   "bugs": {
-    "url": "https://github.com/chatty-cloud/chatty-client-javascript/issues",
+    "url": "https://github.com/chattycloud/chatty-client-javascript/issues",
     "email": "administrator@chatty-cloud.com"
   },
   "homepage": "https://www.chatty-cloud.com",
