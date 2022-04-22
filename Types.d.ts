@@ -22,7 +22,10 @@ export declare type AppType = {
     chatPageLimit: number;
     chatListPageLimit: number;
     thumbnailSize: number;
-    systemMessages: Array<SystemMessagesIndexSignature> | [];
+    joinMessage: boolean;
+    leaveMessage: boolean;
+    inviteMessage: boolean;
+    excludeMessage: boolean;
     notificationSound: string;
     enableImageUpload: boolean;
     enableVideoUpload: boolean;
@@ -154,46 +157,19 @@ export declare type MessageFormatType = 'TEXT' | 'FILE' | 'JSON';
 export interface SystemMessagesIndexSignature {
     [key: string]: string;
 }
+export interface AppIndexSignature {
+    [key: string]: object | string | boolean | number | Date | null;
+}
 export interface TranslationIndexSignature {
     [key: string]: string;
 }
 /**
  * Default System Message
- * string이 empty가 아니라면 system message를 created 하고 chat Member에 silent push 를 보낸다
- * invite 와 exclude의 경우에는 대상자에게만 push 를 보낸다.
- * join 와 leave 는 대상자를 제외한 chat member 모두에게 push를 보낸다
+ * system message의 type이 true 라면 system message를 created 하고 chat Member에 silent push 를 보낸다
+ * invite 와 exclude의 경우에는 대상자에게는 push 를 보낸다.
+ * join 와 leave 는 대상자를 제외한 chat member 모두에게 silent push를 보낸다
  */
-export declare const DefaultSystemMessages: ({
-    welcome: string;
-    invite?: undefined;
-    exclude?: undefined;
-    join?: undefined;
-    leave?: undefined;
-} | {
-    invite: string;
-    welcome?: undefined;
-    exclude?: undefined;
-    join?: undefined;
-    leave?: undefined;
-} | {
-    exclude: string;
-    welcome?: undefined;
-    invite?: undefined;
-    join?: undefined;
-    leave?: undefined;
-} | {
-    join: string;
-    welcome?: undefined;
-    invite?: undefined;
-    exclude?: undefined;
-    leave?: undefined;
-} | {
-    leave: string;
-    welcome?: undefined;
-    invite?: undefined;
-    exclude?: undefined;
-    join?: undefined;
-})[];
+export declare const DefaultSystemMessages: SystemMessagesIndexSignature;
 export declare const SupportedImageFormat: string[];
 export declare const SupportedVideoFormat: string[];
 export interface ChatConnectOptions {

@@ -1709,17 +1709,16 @@ var MemberPermissionType;
 ;
 /**
  * Default System Message
- * string이 empty가 아니라면 system message를 created 하고 chat Member에 silent push 를 보낸다
- * invite 와 exclude의 경우에는 대상자에게만 push 를 보낸다.
- * join 와 leave 는 대상자를 제외한 chat member 모두에게 push를 보낸다
+ * system message의 type이 true 라면 system message를 created 하고 chat Member에 silent push 를 보낸다
+ * invite 와 exclude의 경우에는 대상자에게는 push 를 보낸다.
+ * join 와 leave 는 대상자를 제외한 chat member 모두에게 silent push를 보낸다
  */
-exports.DefaultSystemMessages = [
-    { welcome: 'Welcome to chat' },
-    { invite: '{MEMBER-NAME} was invited to chat' },
-    { exclude: '{MEMBER-NAME}  was excluded from chat' },
-    { join: '{MEMBER-NAME}  joined chat' },
-    { leave: '{MEMBER-NAME}  left chat' }
-];
+exports.DefaultSystemMessages = {
+    invite: '{MEMBER-NAME} was invited to chat',
+    exclude: '{MEMBER-NAME}  was excluded from chat',
+    join: '{MEMBER-NAME}  joined chat',
+    leave: '{MEMBER-NAME}  left chat'
+};
 exports.SupportedImageFormat = ['image/png', 'image/jpg', 'image/jpeg', 'image/gif', 'image/webp'];
 exports.SupportedVideoFormat = ['video/mp4', 'video/webm'];
 /**
@@ -2039,7 +2038,8 @@ var Chatty = /** @class */ (function () {
     };
     Chatty.prototype.sendTextMessage = function (text) {
         if (!text) {
-            throw new ChattyException('E1001');
+            console.debug('sendTextMessage function param error: text is empty');
+            return;
         }
         if (!this.chat) {
             throw new ChattyException('E4002');
@@ -2066,10 +2066,12 @@ var Chatty = /** @class */ (function () {
     Chatty.prototype.sendFileMessage = function (files) {
         var _this = this;
         if (!files) {
-            throw new ChattyException('E1001');
+            console.debug('sendFileMessage function param error: files are undefined');
+            return;
         }
         if (files.length > 4) {
-            throw new ChattyException('E1006');
+            console.debug('sendFileMessage function param error: files length can not exceed 4');
+            return;
         }
         if (!this.chat || !this.chat.id) {
             throw new ChattyException('E4002');
@@ -6652,7 +6654,7 @@ exports.hasBinary = hasBinary;
 /***/ ((module) => {
 
 "use strict";
-module.exports = JSON.parse('{"name":"chatty-cloud","version":"1.0.58","description":"","main":"lib/index.js","types":"lib/src/index.d.ts","scripts":{"chatty-types":"rm -rf ./src/chatty-types && cp -r ~/chatty/server/chatty-types ./src/","install-local":"yarn ../chatty-client-javascript","--------- dev build guide -------":"git push > npm version patch > yarn build.dev > npm publish","--------- pro build guide -------":"git push > npm version minor > yarn build.pro > npm publish","build.local":"rm -rf .git/index.lock && rm -rf ./lib && webpack --config webpack.config.ts --env MODE=none","build.dev":"rm -rf .git/index.lock && rm -rf ./lib && webpack --config webpack.config.ts --env MODE=development && cp lib/src/* ../chatty-client-javascript/","build.pro":"rm -rf .git/index.lock && rm -rf ./lib && webpack --config webpack.config.ts --env MODE=production && cp lib/src/* ../chatty-client-javascript/","build":"webpack --config webpack.config.ts --env MODE=production && cp lib/src/* ../chatty-client-javascript/"},"repository":"https://github.com/chatty-cloud/chatty-cloud-sdk.git","bugs":{"url":"https://github.com/chatty-cloud/chatty-cloud-sdk/issues","email":"administrator@chatty-cloud.com"},"homepage":"https://www.chatty-cloud.com","keywords":[],"files":["lib"],"author":"chatty-cloud<administrator@chatty-cloud.com>","license":"ISC","dependencies":{"socket.io-client":"^4.1.3"},"devDependencies":{"@types/node":"^16.6.0","@types/webpack":"^5.28.0","path":"^0.12.7","ts-loader":"^9.2.5","ts-node":"^10.2.0","typescript":"^4.3.5","webpack":"^5.50.0","webpack-cli":"^4.7.2"}}');
+module.exports = JSON.parse('{"name":"chatty-cloud","version":"1.0.58","description":"","main":"lib/index.js","types":"lib/src/index.d.ts","scripts":{"chatty-types":"rm -rf ./src/chatty-types && cp -r ~/chatty/server/chatty-types ./src/","--------- dev build guide -------":"git push > npm version patch > yarn build.dev > npm publish","--------- pro build guide -------":"git push > npm version minor > yarn build.pro > npm publish","build.local":"rm -rf .git/index.lock && rm -rf ./lib && webpack --config webpack.config.ts --env MODE=none","build.dev":"rm -rf .git/index.lock && rm -rf ./lib && webpack --config webpack.config.ts --env MODE=development && cp lib/src/* ../chatty-client-javascript/","build.pro":"rm -rf .git/index.lock && rm -rf ./lib && webpack --config webpack.config.ts --env MODE=production && cp lib/src/* ../chatty-client-javascript/","build":"webpack --config webpack.config.ts --env MODE=production && cp lib/src/* ../chatty-client-javascript/"},"repository":"https://github.com/chatty-cloud/chatty-cloud-sdk.git","bugs":{"url":"https://github.com/chatty-cloud/chatty-cloud-sdk/issues","email":"administrator@chatty-cloud.com"},"homepage":"https://www.chatty-cloud.com","keywords":[],"files":["lib"],"author":"chatty-cloud<administrator@chatty-cloud.com>","license":"ISC","dependencies":{"socket.io-client":"^4.1.3"},"devDependencies":{"@types/node":"^16.6.0","@types/webpack":"^5.28.0","path":"^0.12.7","ts-loader":"^9.2.5","ts-node":"^10.2.0","typescript":"^4.3.5","webpack":"^5.50.0","webpack-cli":"^4.7.2"}}');
 
 /***/ })
 

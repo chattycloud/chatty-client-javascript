@@ -63,7 +63,7 @@ declare class Chatty {
         type: string;
         by: string;
         SenderId: string | undefined;
-    };
+    } | undefined;
     sendFileMessage(files: Array<FileType>): {
         id: string;
         createdAt: Date;
@@ -75,7 +75,7 @@ declare class Chatty {
         Sender: {
             id: string | undefined;
         };
-    };
+    } | undefined;
     refreshChat(ChatId: string): void;
     /**
      
