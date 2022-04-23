@@ -2038,7 +2038,7 @@ var Chatty = /** @class */ (function () {
     };
     Chatty.prototype.sendTextMessage = function (text) {
         if (!text) {
-            console.debug('sendTextMessage function param error: text is empty');
+            console.debug('::: Chatty sendTextMessage function param error: text is empty');
             return;
         }
         if (!this.chat) {
@@ -2066,11 +2066,11 @@ var Chatty = /** @class */ (function () {
     Chatty.prototype.sendFileMessage = function (files) {
         var _this = this;
         if (!files) {
-            console.debug('sendFileMessage function param error: files are undefined');
+            console.debug('::: Chatty sendFileMessage function param error: files are undefined');
             return;
         }
         if (files.length > 4) {
-            console.debug('sendFileMessage function param error: files length can not exceed 4');
+            console.debug('::: Chatty sendFileMessage function param error: files length can not exceed 4');
             return;
         }
         if (!this.chat || !this.chat.id) {
@@ -2100,7 +2100,7 @@ var Chatty = /** @class */ (function () {
             _this.chat.sendMessage(__assign(__assign({}, message), { files: files }));
         })
             .catch(function (err) {
-            console.debug('uploadFiles error %O', err);
+            console.debug('::: Chatty uploadFiles error', err);
         });
         // return temporary message object before inserting to database
         return message;
@@ -2706,6 +2706,9 @@ var Chatty = /** @class */ (function () {
                                                         json = _b.sent();
                                                         form = new FormData();
                                                         form.append('file', file);
+                                                        // const resp = await fetch(file.uri);
+                                                        // const blob = await resp.blob();
+                                                        console.debug('SignedUrl Response', json);
                                                         uploadUrl = json.data;
                                                         return [4 /*yield*/, fetch(uploadUrl, {
                                                                 method: 'POST',
@@ -3065,7 +3068,7 @@ var ChattyException = /** @class */ (function (_super) {
         _this = _super.call(this, message) || this;
         // Object.setPrototypeOf(this, new.target.prototype);
         _this.errorCode = errorCode;
-        console.debug(errorCode, message);
+        console.debug("::: Chatty Exception ".concat(errorCode), message);
         reportError({
             errorCode: errorCode,
             errorMessage: message,
