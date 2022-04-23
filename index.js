@@ -2683,7 +2683,7 @@ var Chatty = /** @class */ (function () {
                                     Chatty.fileCheckValidation(files);
                                     CF_DELIVERY_1 = 'https://imagedelivery.net/Se1RT11x0rciKkirEISyIg';
                                     return [4 /*yield*/, Promise.all(files.map(function (file) { return __awaiter(_this, void 0, void 0, function () {
-                                            var signedUrlResult, json, form, uploadUrl, uploadResult, json_1;
+                                            var signedUrlResult, form, json, uploadUrl, uploadResult, json_1;
                                             var _a;
                                             return __generator(this, function (_b) {
                                                 switch (_b.label) {
@@ -2702,14 +2702,15 @@ var Chatty = /** @class */ (function () {
                                                         signedUrlResult = _b.sent();
                                                         console.debug('SignedUrl Response', signedUrlResult);
                                                         if (!signedUrlResult.ok) return [3 /*break*/, 7];
-                                                        return [4 /*yield*/, signedUrlResult.json()];
-                                                    case 2:
-                                                        json = _b.sent();
                                                         form = new FormData();
                                                         form.append('file', file);
                                                         // const resp = await fetch(file.uri);
                                                         // const blob = await resp.blob();
-                                                        console.debug('SignedUrl json', json);
+                                                        console.debug('SignedUrl json1');
+                                                        return [4 /*yield*/, signedUrlResult.json()];
+                                                    case 2:
+                                                        json = _b.sent();
+                                                        console.debug('SignedUrl json2', json);
                                                         uploadUrl = json.data;
                                                         return [4 /*yield*/, fetch(uploadUrl, {
                                                                 method: 'POST',
