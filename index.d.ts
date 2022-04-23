@@ -135,17 +135,9 @@ declare class Chatty {
      * @param file
      * @returns
      */
-    static uploadFileCF(files: Array<FileType>): Promise<Array<{
+    static uploadFiles(files: Array<FileType>): Promise<Array<{
         uri: string;
     } | undefined>>;
-    /**
-     *
-     * @deprecated
-     * @param file
-     * @param ChatId
-     * @returns
-     */
-    static uploadFile(file: any, ChatId: string): Promise<any>;
     static joinChat(ChatId: string): Promise<unknown>;
     static leaveChat(ChatId: string): Promise<unknown>;
     static inviteMembers(ChatId: string, MemberIds: Array<string>): Promise<unknown>;

@@ -2092,7 +2092,7 @@ var Chatty = /** @class */ (function () {
                 id: Chatty.member.id
             }
         };
-        Chatty.uploadFileCF(files)
+        Chatty.uploadFiles(files)
             .then(function (files) {
             if (!_this.chat) {
                 throw new ChattyException('E2002');
@@ -2100,7 +2100,7 @@ var Chatty = /** @class */ (function () {
             _this.chat.sendMessage(__assign(__assign({}, message), { files: files }));
         })
             .catch(function (err) {
-            console.debug(err);
+            console.debug('uploadFiles error %O', err);
         });
         // return temporary message object before inserting to database
         return message;
@@ -2666,7 +2666,7 @@ var Chatty = /** @class */ (function () {
      * @param file
      * @returns
      */
-    Chatty.uploadFileCF = function (files) {
+    Chatty.uploadFiles = function (files) {
         return __awaiter(this, void 0, void 0, function () {
             var _this = this;
             return __generator(this, function (_a) {
@@ -2740,134 +2740,12 @@ var Chatty = /** @class */ (function () {
             });
         });
     };
-    /**
-     *
-     * @deprecated
-     * @param file
-     * @param ChatId
-     * @returns
-     */
-    Chatty.uploadFile = function (file, ChatId) {
-        return __awaiter(this, void 0, void 0, function () {
-            var _this = this;
-            return __generator(this, function (_a) {
-                return [2 /*return*/, new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-                        var url, cdnUrl, filename, response, json, resp, blob, responsePut, json, err_10;
-                        return __generator(this, function (_a) {
-                            switch (_a.label) {
-                                case 0:
-                                    _a.trys.push([0, 12, , 13]);
-                                    if (!Chatty.apiKey) {
-                                        throw new ChattyException('E2000');
-                                    }
-                                    if (!Chatty.apiUrl || !Chatty.member) {
-                                        reject('::: Chatty was not initialized. Please call init function first');
-                                        return [2 /*return*/];
-                                    }
-                                    if (!Chatty.app) {
-                                        console.warn('::: Chatty uploadFile error - App is not defined, Please check your chatty init');
-                                        reject();
-                                        return [2 /*return*/];
-                                    }
-                                    if (!file.type || !file.size) {
-                                        console.warn("::: Chatty uploadFile error - Information of file type or file size does not existed");
-                                        reject("Information of file type or file size does not existed");
-                                        return [2 /*return*/];
-                                    }
-                                    if (file.type.split('/')[0] === 'image' && !Chatty.app.enableImageUpload) {
-                                        console.warn("::: Chatty uploadFile error - Image file type is not supported. please check your app setting in chatty-cloud dashboard");
-                                        reject("Image file is not supported");
-                                        return [2 /*return*/];
-                                    }
-                                    if (file.type.split('/')[0] === 'video' && !Chatty.app.enableVideoUpload) {
-                                        console.warn("::: Chatty uploadFile error - Video file type is not supported. please check your app setting in chatty-cloud dashboard");
-                                        reject("Video file is not supported");
-                                        return [2 /*return*/];
-                                    }
-                                    if (file.type.split('/')[0] === 'image' && !Types_1.SupportedImageFormat.includes(file.type)) {
-                                        console.warn("::: Chatty uploadFile error - ".concat(file.type, " is not supported."));
-                                        reject("".concat(file.type, " is not supported"));
-                                        return [2 /*return*/];
-                                    }
-                                    if (file.type.split('/')[0] === 'video' && !Types_1.SupportedVideoFormat.includes(file.type)) {
-                                        console.warn("::: Chatty uploadFile error - ".concat(file.type, " is not supported."));
-                                        reject("".concat(file.type, " is not supported"));
-                                        return [2 /*return*/];
-                                    }
-                                    if (file.type.split('/')[0] === 'image' && file.size > Chatty.app.maxImageSize) {
-                                        console.warn('::: Chatty uploadFile error - Please check your maximum image file size. please check your app setting in chatty-cloud dashboard');
-                                        reject("Please check your maximum image file size");
-                                        return [2 /*return*/];
-                                    }
-                                    if (file.type.split('/')[0] === 'video' && file.size > Chatty.app.maxVideoSize) {
-                                        console.warn('::: Chatty uploadFile error - Please check your maximum video file size. please check your app setting in chatty-cloud dashboard');
-                                        reject("Please check your maximum video file size");
-                                        return [2 /*return*/];
-                                    }
-                                    url = 'https://file.chatty-cloud.com/uploader';
-                                    cdnUrl = 'https://cdn.chatty-cloud.com';
-                                    filename = "".concat(Chatty.app.name, "/").concat(ChatId, "/").concat(Chatty.member.id, "/Chatty_").concat(new Date().toISOString(), ".").concat(file.type.split('/')[1]);
-                                    return [4 /*yield*/, fetch("".concat(url, "?filename=").concat(filename, "&filetype=").concat(file.type))];
-                                case 1:
-                                    response = _a.sent();
-                                    if (!response.ok) return [3 /*break*/, 9];
-                                    return [4 /*yield*/, response.json()];
-                                case 2:
-                                    json = _a.sent();
-                                    console.debug('::: Chatty getSignedUrl success', json);
-                                    return [4 /*yield*/, fetch(file.uri)];
-                                case 3:
-                                    resp = _a.sent();
-                                    return [4 /*yield*/, resp.blob()];
-                                case 4:
-                                    blob = _a.sent();
-                                    return [4 /*yield*/, fetch(json.uploadURL, { method: 'PUT', body: blob })];
-                                case 5:
-                                    responsePut = _a.sent();
-                                    if (!responsePut.ok) return [3 /*break*/, 7];
-                                    console.debug('::: Chatty Upload to s3 success', responsePut);
-                                    // FOR CDN CACHING
-                                    return [4 /*yield*/, fetch(cdnUrl + "/thumb/".concat(Chatty.app.thumbnailSize, "/").concat(filename), { method: 'GET' })];
-                                case 6:
-                                    // FOR CDN CACHING
-                                    _a.sent();
-                                    resolve({
-                                        uri: cdnUrl + "/".concat(filename),
-                                        type: file.type,
-                                        name: file.name,
-                                        thumbnail: cdnUrl + "/thumb/".concat(Chatty.app.thumbnailSize, "/").concat(filename)
-                                    });
-                                    return [3 /*break*/, 8];
-                                case 7:
-                                    console.warn('::: Chatty Upload to s3 error', responsePut);
-                                    reject();
-                                    _a.label = 8;
-                                case 8: return [3 /*break*/, 11];
-                                case 9: return [4 /*yield*/, response.json()];
-                                case 10:
-                                    json = _a.sent();
-                                    console.warn('::: Chatty getSignedUrl fail', json);
-                                    reject();
-                                    _a.label = 11;
-                                case 11: return [3 /*break*/, 13];
-                                case 12:
-                                    err_10 = _a.sent();
-                                    reportError(err_10);
-                                    reject(err_10);
-                                    return [3 /*break*/, 13];
-                                case 13: return [2 /*return*/];
-                            }
-                        });
-                    }); })];
-            });
-        });
-    };
     Chatty.joinChat = function (ChatId) {
         return __awaiter(this, void 0, void 0, function () {
             var _this = this;
             return __generator(this, function (_a) {
                 return [2 /*return*/, new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-                        var response, data, json, err_11;
+                        var response, data, json, err_10;
                         return __generator(this, function (_a) {
                             switch (_a.label) {
                                 case 0:
@@ -2906,8 +2784,8 @@ var Chatty = /** @class */ (function () {
                                     throw new ChattyException('E3001', JSON.stringify({ status: response.status, statusText: response.statusText, json: json }));
                                 case 5: return [3 /*break*/, 7];
                                 case 6:
-                                    err_11 = _a.sent();
-                                    reject(err_11);
+                                    err_10 = _a.sent();
+                                    reject(err_10);
                                     return [3 /*break*/, 7];
                                 case 7: return [2 /*return*/];
                             }
@@ -2921,7 +2799,7 @@ var Chatty = /** @class */ (function () {
             var _this = this;
             return __generator(this, function (_a) {
                 return [2 /*return*/, new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-                        var response, data, json, err_12;
+                        var response, data, json, err_11;
                         return __generator(this, function (_a) {
                             switch (_a.label) {
                                 case 0:
@@ -2960,8 +2838,8 @@ var Chatty = /** @class */ (function () {
                                     throw new ChattyException('E3001', JSON.stringify({ status: response.status, statusText: response.statusText, json: json }));
                                 case 5: return [3 /*break*/, 7];
                                 case 6:
-                                    err_12 = _a.sent();
-                                    reject(err_12);
+                                    err_11 = _a.sent();
+                                    reject(err_11);
                                     return [3 /*break*/, 7];
                                 case 7: return [2 /*return*/];
                             }
@@ -2975,7 +2853,7 @@ var Chatty = /** @class */ (function () {
             var _this = this;
             return __generator(this, function (_a) {
                 return [2 /*return*/, new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-                        var response, data, json, err_13;
+                        var response, data, json, err_12;
                         return __generator(this, function (_a) {
                             switch (_a.label) {
                                 case 0:
@@ -3014,8 +2892,8 @@ var Chatty = /** @class */ (function () {
                                     throw new ChattyException('E3001', JSON.stringify({ status: response.status, statusText: response.statusText, json: json }));
                                 case 5: return [3 /*break*/, 7];
                                 case 6:
-                                    err_13 = _a.sent();
-                                    reject(err_13);
+                                    err_12 = _a.sent();
+                                    reject(err_12);
                                     return [3 /*break*/, 7];
                                 case 7: return [2 /*return*/];
                             }
@@ -3029,7 +2907,7 @@ var Chatty = /** @class */ (function () {
             var _this = this;
             return __generator(this, function (_a) {
                 return [2 /*return*/, new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-                        var response, data, json, err_14;
+                        var response, data, json, err_13;
                         return __generator(this, function (_a) {
                             switch (_a.label) {
                                 case 0:
@@ -3068,8 +2946,8 @@ var Chatty = /** @class */ (function () {
                                     throw new ChattyException('E3001', JSON.stringify({ status: response.status, statusText: response.statusText, json: json }));
                                 case 5: return [3 /*break*/, 7];
                                 case 6:
-                                    err_14 = _a.sent();
-                                    reject(err_14);
+                                    err_13 = _a.sent();
+                                    reject(err_13);
                                     return [3 /*break*/, 7];
                                 case 7: return [2 /*return*/];
                             }
@@ -3082,7 +2960,7 @@ var Chatty = /** @class */ (function () {
 }());
 exports.ERR = {
     E1001: 'Chatty error - Check function parameters are proper',
-    E1002: 'Chatty error - Check type of files parameters exist or not',
+    E1002: 'Chatty error - Check type of files parameters. it should contain uri, type, name',
     E1003: 'Chatty error - Image upload not supported. configure your app setting in chatty-cloud dashboard',
     E1004: 'Chatty error - Video upload not supported. configure your app setting in chatty-cloud dashboard',
     E1005: 'Chatty error - Upload file format not supported',
