@@ -2691,7 +2691,7 @@ var Chatty = /** @class */ (function () {
                                                         if (!Chatty.apiKey) {
                                                             throw new ChattyException('E2000');
                                                         }
-                                                        return [4 /*yield*/, fetch('/uploadurl', {
+                                                        return [4 /*yield*/, fetch("".concat(Chatty.apiUrl, "/uploadurl"), {
                                                                 method: 'GET',
                                                                 headers: {
                                                                     token: Chatty.apiKey,
