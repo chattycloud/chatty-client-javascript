@@ -2683,7 +2683,7 @@ var Chatty = /** @class */ (function () {
                                     Chatty.fileCheckValidation(files);
                                     CF_DELIVERY_1 = 'https://imagedelivery.net/Se1RT11x0rciKkirEISyIg';
                                     return [4 /*yield*/, Promise.all(files.map(function (file) { return __awaiter(_this, void 0, void 0, function () {
-                                            var response, json, form, uploadUrl, uploadResult, json_1;
+                                            var response, json, form, uploadResult, json_1;
                                             var _a;
                                             return __generator(this, function (_b) {
                                                 switch (_b.label) {
@@ -2706,8 +2706,7 @@ var Chatty = /** @class */ (function () {
                                                         json = _b.sent();
                                                         form = new FormData();
                                                         form.append('file', file);
-                                                        uploadUrl = json.data.uploadUrl;
-                                                        return [4 /*yield*/, fetch(uploadUrl, {
+                                                        return [4 /*yield*/, fetch(json.uploadUrl, {
                                                                 method: 'POST',
                                                                 body: form
                                                             })];
