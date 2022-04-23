@@ -2695,7 +2695,8 @@ var Chatty = /** @class */ (function () {
                                                                 method: 'GET',
                                                                 headers: {
                                                                     token: Chatty.apiKey,
-                                                                    'Content-Type': 'application/json'
+                                                                    'Content-Type': 'application/json',
+                                                                    'Accept': 'application/json'
                                                                 }
                                                             })];
                                                     case 1:
