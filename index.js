@@ -2695,22 +2695,18 @@ var Chatty = /** @class */ (function () {
                                                                 method: 'GET',
                                                                 headers: {
                                                                     token: Chatty.apiKey,
-                                                                    'Content-Type': 'application/json',
-                                                                    'Accept': 'application/json'
+                                                                    'Content-Type': 'application/json'
                                                                 }
                                                             })];
                                                     case 1:
                                                         response = _b.sent();
-                                                        console.debug('SignedUrl Response', response);
                                                         if (!response.ok) return [3 /*break*/, 7];
-                                                        console.debug('SignedUrl json1');
                                                         return [4 /*yield*/, response.json()];
                                                     case 2:
                                                         json = _b.sent();
-                                                        console.debug('SignedUrl json2', json);
                                                         form = new FormData();
                                                         form.append('file', file);
-                                                        uploadUrl = json.data;
+                                                        uploadUrl = json.data.uploadUrl;
                                                         return [4 /*yield*/, fetch(uploadUrl, {
                                                                 method: 'POST',
                                                                 body: form
