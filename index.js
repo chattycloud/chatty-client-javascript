@@ -2086,24 +2086,21 @@ var Chatty = /** @class */ (function () {
             files: files,
             text: 'File Message',
             type: 'FILE',
-            by: 'USER',
-            SenderId: Chatty.member.id,
-            Sender: {
-                id: Chatty.member.id
-            }
+            by: 'USER'
         };
         Chatty.uploadFiles(files)
             .then(function (files) {
             if (!_this.chat) {
                 throw new ChattyException('E2002');
             }
+            console.info('::: Chatty uploadFiles success', files);
             _this.chat.sendMessage(__assign(__assign({}, message), { files: files }));
         })
             .catch(function (err) {
             console.debug('::: Chatty uploadFiles error', err);
         });
-        // return temporary message object before inserting to database
-        return message;
+        // return temporary message object with SenderId before inserting to database
+        return __assign(__assign({}, message), { SenderId: Chatty.member.id });
     };
     Chatty.prototype.refreshChat = function (ChatId) {
         if (!ChatId) {
@@ -2174,8 +2171,10 @@ var Chatty = /** @class */ (function () {
         if (!data || (Array.isArray(data) && data.length < 1)) {
             throw new ChattyException('E1001');
         }
-        if (Array.isArray(data)) {
-            data.sort();
+        var distinct = data;
+        if (Array.isArray(distinct)) {
+            distinct.sort();
+            distinct = distinct.toString();
         }
         var MD5 = function (d) { var result = M(V(Y(X(d), 8 * d.length))); return result.toLowerCase(); };
         function M(d) { for (var _, m = "0123456789ABCDEF", f = "", r = 0; r < d.length; r++)
@@ -2196,7 +2195,7 @@ var Chatty = /** @class */ (function () {
         function md5_ii(d, _, m, f, r, i, n) { return md5_cmn(m ^ (_ | ~f), d, _, r, i, n); }
         function safe_add(d, _) { var m = (65535 & d) + (65535 & _); return (d >> 16) + (_ >> 16) + (m >> 16) << 16 | 65535 & m; }
         function bit_rol(d, _) { return d << _ | d >>> 32 - _; }
-        return MD5(JSON.stringify(data));
+        return MD5(JSON.stringify(distinct));
     };
     Chatty.createChat = function (payload) {
         return __awaiter(this, void 0, void 0, function () {
@@ -2706,7 +2705,10 @@ var Chatty = /** @class */ (function () {
                                                         json = _b.sent();
                                                         form = new FormData();
                                                         form.append('file', file);
-                                                        return [4 /*yield*/, fetch(json.uploadUrl, {
+                                                        // const resp = await fetch(file.uri);
+                                                        // const blob = await resp.blob();
+                                                        console.debug('nuno', json);
+                                                        return [4 /*yield*/, fetch(json.uploadURL, {
                                                                 method: 'POST',
                                                                 body: form
                                                             })];
@@ -6531,7 +6533,7 @@ exports.hasBinary = hasBinary;
 /***/ ((module) => {
 
 "use strict";
-module.exports = JSON.parse('{"name":"chatty-cloud","version":"1.0.58","description":"","main":"lib/index.js","types":"lib/src/index.d.ts","scripts":{"chatty-types":"rm -rf ./src/chatty-types && cp -r ~/chatty/server/chatty-types ./src/","--------- dev build guide -------":"git push > npm version patch > yarn build.dev > npm publish","--------- pro build guide -------":"git push > npm version minor > yarn build.pro > npm publish","build.local":"rm -rf .git/index.lock && rm -rf ./lib && webpack --config webpack.config.ts --env MODE=none","build.dev":"rm -rf .git/index.lock && rm -rf ./lib && webpack --config webpack.config.ts --env MODE=development && cp lib/src/* ../chatty-client-javascript/","build.pro":"rm -rf .git/index.lock && rm -rf ./lib && webpack --config webpack.config.ts --env MODE=production && cp lib/src/* ../chatty-client-javascript/","build":"webpack --config webpack.config.ts --env MODE=production && cp lib/src/* ../chatty-client-javascript/"},"repository":"https://github.com/chatty-cloud/chatty-cloud-sdk.git","bugs":{"url":"https://github.com/chatty-cloud/chatty-cloud-sdk/issues","email":"administrator@chatty-cloud.com"},"homepage":"https://www.chatty-cloud.com","keywords":[],"files":["lib"],"author":"chatty-cloud<administrator@chatty-cloud.com>","license":"ISC","dependencies":{"socket.io-client":"^4.1.3"},"devDependencies":{"@types/node":"^16.6.0","@types/webpack":"^5.28.0","path":"^0.12.7","ts-loader":"^9.2.5","ts-node":"^10.2.0","typescript":"^4.3.5","webpack":"^5.50.0","webpack-cli":"^4.7.2"}}');
+module.exports = JSON.parse('{"name":"chatty-client","version":"1.0.1","description":"","main":"lib/src/index.js","types":"lib/src/index.d.ts","scripts":{"chatty-types":"rm -rf ./src/chatty-types && cp -r ~/chatty/server/chatty-types ./src/","--------- dev build guide -------":"git push > npm version patch > yarn build.dev > npm publish","--------- pro build guide -------":"git push > npm version minor > yarn build.pro > npm publish","build.local":"rm -rf .git/index.lock && rm -rf ./lib && webpack --config webpack.config.ts --env MODE=none","build.dev":"rm -rf .git/index.lock && rm -rf ./lib && webpack --config webpack.config.ts --env MODE=development && cp lib/src/* ../chatty-client-javascript/","build.pro":"rm -rf .git/index.lock && rm -rf ./lib && webpack --config webpack.config.ts --env MODE=production && cp lib/src/* ../chatty-client-javascript/","build":"webpack --config webpack.config.ts --env MODE=production && cp lib/src/* ../chatty-client-javascript/"},"repository":"https://github.com/chatty-cloud/chatty-cloud-sdk.git","bugs":{"url":"https://github.com/chatty-cloud/chatty-cloud-sdk/issues","email":"administrator@chatty-cloud.com"},"homepage":"https://www.chatty-cloud.com","keywords":[],"files":["lib"],"author":"chatty-cloud<administrator@chatty-cloud.com>","license":"ISC","dependencies":{"socket.io-client":"^4.1.3"},"devDependencies":{"@types/node":"^16.6.0","@types/webpack":"^5.28.0","path":"^0.12.7","ts-loader":"^9.2.5","ts-node":"^10.2.0","typescript":"^4.3.5","webpack":"^5.50.0","webpack-cli":"^4.7.2"}}');
 
 /***/ })
 

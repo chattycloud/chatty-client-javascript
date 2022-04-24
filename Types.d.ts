@@ -77,6 +77,7 @@ export declare type ChatType = {
 export declare type ChatMemberType = {
     missedCount: number;
     role: ChatRoleType;
+    group: string;
     createdAt: Date;
     updatedAt: Date;
     ChatId: string;
