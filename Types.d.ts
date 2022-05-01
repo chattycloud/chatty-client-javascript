@@ -187,6 +187,15 @@ export interface ChatListFetchOptions {
     refresh: boolean | undefined;
     group: string | undefined;
 }
+export interface MissedCountType {
+    missedCount: {
+        total: number;
+        group: Array<{
+            name: string;
+            count: number;
+        }>;
+    };
+}
 export declare type MessagesFetchResponseType = {
     refresh: boolean;
     hasNext: boolean;

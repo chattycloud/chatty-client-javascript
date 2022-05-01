@@ -1,4 +1,4 @@
-import { ChatType, MemberType, AppType, FileType, ChatConnectOptions, ChatListFetchOptions, ChatListFetchHandler, MessagesFetchHandler, MessagesUpdateHandler, MessageReceiveHandler, MemberPermissionType, ChatRefreshHandler, ChatListRefreshHandler, ChatConnectHandler, MessageSendHandler, ChatListConnectHandler, InitializePayloads } from './Types';
+import { ChatType, MemberType, AppType, FileType, ChatConnectOptions, ChatListFetchOptions, ChatListFetchHandler, MessagesFetchHandler, MessagesUpdateHandler, MessageReceiveHandler, MemberPermissionType, ChatRefreshHandler, ChatListRefreshHandler, ChatConnectHandler, MessageSendHandler, ChatListConnectHandler, InitializePayloads, MissedCountType } from './Types';
 import { Chat } from './Chat';
 import { ChatList } from './ChatList';
 declare class Chatty {
@@ -10,10 +10,10 @@ declare class Chatty {
     chat: Chat | null;
     /**
      * @constructor
-     * @param chattyInstance instance of chatlist in case of moving from chatlist
-     * @description When creating chat instance to update change of chat room to chat list automatically, put chat list instance as a parameter of Chat constructor
+     * @param chatty instance of chatlist in case of coming from chatlist
+     * @description When creating chat instance to update changing of chat room to chat list automatically, put chat list instance as a parameter of Chat constructor
      */
-    constructor(chattyInstance?: Chatty);
+    constructor(chatty?: Chatty);
     static init(initials: InitializePayloads): Promise<void>;
     static exit(): Promise<void>;
     /**
@@ -114,7 +114,7 @@ declare class Chatty {
      * @returns
      */
     static createMessage(message: any, system?: boolean): Promise<unknown>;
-    static getMissedTotalCount(): Promise<unknown>;
+    static getMissedCount(): Promise<MissedCountType>;
     static getMembersByGroup(group: string): Promise<unknown>;
     /**
      *

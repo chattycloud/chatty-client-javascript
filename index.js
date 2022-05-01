@@ -1871,12 +1871,12 @@ var dev =  true ? 'dev' : 0;
 var Chatty = /** @class */ (function () {
     /**
      * @constructor
-     * @param chattyInstance instance of chatlist in case of moving from chatlist
-     * @description When creating chat instance to update change of chat room to chat list automatically, put chat list instance as a parameter of Chat constructor
+     * @param chatty instance of chatlist in case of coming from chatlist
+     * @description When creating chat instance to update changing of chat room to chat list automatically, put chat list instance as a parameter of Chat constructor
      */
-    function Chatty(chattyInstance) {
-        if (chattyInstance) {
-            this.chatlist = chattyInstance.chatlist;
+    function Chatty(chatty) {
+        if (chatty) {
+            this.chatlist = chatty.chatlist;
         }
         else {
             this.chatlist = new ChatList_1.ChatList();
@@ -2172,6 +2172,7 @@ var Chatty = /** @class */ (function () {
             throw new ChattyException('E1001');
         }
         var distinct = data;
+        console.debug('::: generateDistinctKey', distinct);
         if (Array.isArray(distinct)) {
             distinct.sort();
             distinct = distinct.toString();
@@ -2356,7 +2357,7 @@ var Chatty = /** @class */ (function () {
             });
         });
     };
-    Chatty.getMissedTotalCount = function () {
+    Chatty.getMissedCount = function () {
         return __awaiter(this, void 0, void 0, function () {
             var _this = this;
             return __generator(this, function (_a) {
@@ -6533,7 +6534,7 @@ exports.hasBinary = hasBinary;
 /***/ ((module) => {
 
 "use strict";
-module.exports = JSON.parse('{"name":"chatty-client","version":"1.0.1","description":"","main":"lib/src/index.js","types":"lib/src/index.d.ts","scripts":{"chatty-types":"rm -rf ./src/chatty-types && cp -r ~/chatty/server/chatty-types ./src/","--------- dev build guide -------":"git push > npm version patch > yarn build.dev > npm publish","--------- pro build guide -------":"git push > npm version minor > yarn build.pro > npm publish","build.local":"rm -rf .git/index.lock && rm -rf ./lib && webpack --config webpack.config.ts --env MODE=none","build.dev":"rm -rf .git/index.lock && rm -rf ./lib && webpack --config webpack.config.ts --env MODE=development && cp lib/src/* ../chatty-client-javascript/","build.pro":"rm -rf .git/index.lock && rm -rf ./lib && webpack --config webpack.config.ts --env MODE=production && cp lib/src/* ../chatty-client-javascript/","build":"webpack --config webpack.config.ts --env MODE=production && cp lib/src/* ../chatty-client-javascript/"},"repository":"https://github.com/chatty-cloud/chatty-cloud-sdk.git","bugs":{"url":"https://github.com/chatty-cloud/chatty-cloud-sdk/issues","email":"administrator@chatty-cloud.com"},"homepage":"https://www.chatty-cloud.com","keywords":[],"files":["lib"],"author":"chatty-cloud<administrator@chatty-cloud.com>","license":"ISC","dependencies":{"socket.io-client":"^4.1.3"},"devDependencies":{"@types/node":"^16.6.0","@types/webpack":"^5.28.0","path":"^0.12.7","ts-loader":"^9.2.5","ts-node":"^10.2.0","typescript":"^4.3.5","webpack":"^5.50.0","webpack-cli":"^4.7.2"}}');
+module.exports = JSON.parse('{"name":"chatty-client","version":"1.0.4","description":"","main":"lib/src/index.js","types":"lib/src/index.d.ts","scripts":{"chatty-types":"rm -rf ./src/chatty-types && cp -r ~/chatty/server/chatty-types ./src/","--------- dev build guide -------":"git push > npm version patch > yarn build.dev > npm publish","--------- pro build guide -------":"git push > npm version minor > yarn build.pro > npm publish","build.local":"rm -rf .git/index.lock && rm -rf ./lib && webpack --config webpack.config.ts --env MODE=none","build.dev":"rm -rf .git/index.lock && rm -rf ./lib && webpack --config webpack.config.ts --env MODE=development && cp lib/src/* ../chatty-client-javascript/","build.pro":"rm -rf .git/index.lock && rm -rf ./lib && webpack --config webpack.config.ts --env MODE=production && cp lib/src/* ../chatty-client-javascript/","build":"webpack --config webpack.config.ts --env MODE=production && cp lib/src/* ../chatty-client-javascript/"},"repository":"https://github.com/chatty-cloud/chatty-cloud-sdk.git","bugs":{"url":"https://github.com/chatty-cloud/chatty-cloud-sdk/issues","email":"administrator@chatty-cloud.com"},"homepage":"https://www.chatty-cloud.com","keywords":[],"files":["lib"],"author":"chatty-cloud<administrator@chatty-cloud.com>","license":"ISC","dependencies":{"socket.io-client":"^4.1.3"},"devDependencies":{"@types/node":"^16.6.0","@types/webpack":"^5.28.0","path":"^0.12.7","ts-loader":"^9.2.5","ts-node":"^10.2.0","typescript":"^4.3.5","webpack":"^5.50.0","webpack-cli":"^4.7.2"}}');
 
 /***/ })
 
