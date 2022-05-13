@@ -1409,7 +1409,7 @@ var Chat = /** @class */ (function () {
             if (!_this.connectHandler) {
                 throw new _1.ChattyException('E4006', 'connectHandler');
             }
-            console.warn('::: Chatty CONNECT_FAIL', err);
+            console.warn('::: Chatty CONNECT_FAIL', { message: 'Please check your connect payload. especially if you use "with" param, check peer member id exist or not' });
             _this.connectHandler(null, err);
         });
         this.socket.on(Types_1.ChattyEvent.CONNECT_ERROR, function (err) {
@@ -1656,7 +1656,7 @@ var ChatList = /** @class */ (function () {
             if (!_this.connectHandler) {
                 throw new _1.ChattyException('E4005', 'connectHandler');
             }
-            console.debug('::: Chatty CONNECT_FAIL', err);
+            console.debug('::: Chatty CONNECT_ERROR', err);
             _this.connectHandler(null, err);
         });
         this.socket.on(Types_1.ChattyEvent.FETCH_CHATLIST_DONE, function (chats) {
