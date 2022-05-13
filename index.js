@@ -1412,6 +1412,15 @@ var Chat = /** @class */ (function () {
             console.warn('::: Chatty CONNECT_FAIL', err);
             _this.connectHandler(null, err);
         });
+        this.socket.on(Types_1.ChattyEvent.CONNECT_ERROR, function (err) {
+            // server connect_error event
+            // 1. check server running
+            if (!_this.connectHandler) {
+                throw new _1.ChattyException('E4006', 'connectHandler');
+            }
+            console.warn('::: Chatty CONNECT_ERROR', err);
+            _this.connectHandler(null, err);
+        });
         this.socket.on(Types_1.ChattyEvent.FETCH_MESSAGES_DONE, function (data) {
             if (!_this.fetchMessagesHandler) {
                 throw new _1.ChattyException('E4006', 'fetchMessagesHandler');
@@ -1641,6 +1650,15 @@ var ChatList = /** @class */ (function () {
             console.debug('::: Chatty CONNECT_FAIL', err);
             _this.connectHandler(null, err);
         });
+        this.socket.on(Types_1.ChattyEvent.CONNECT_ERROR, function (err) {
+            // server connect_error event
+            // 1. check server running
+            if (!_this.connectHandler) {
+                throw new _1.ChattyException('E4005', 'connectHandler');
+            }
+            console.debug('::: Chatty CONNECT_FAIL', err);
+            _this.connectHandler(null, err);
+        });
         this.socket.on(Types_1.ChattyEvent.FETCH_CHATLIST_DONE, function (chats) {
             if (!_this.fetchChatListHandler) {
                 throw new _1.ChattyException('E4005', 'fetchChatListHandler');
@@ -1734,7 +1752,8 @@ var ChattyEvent;
 (function (ChattyEvent) {
     ChattyEvent["CONNECT"] = "connection";
     ChattyEvent["CONNECT_DONE"] = "connect_done";
-    ChattyEvent["CONNECT_FAIL"] = "connect_error";
+    ChattyEvent["CONNECT_FAIL"] = "connect_fail";
+    ChattyEvent["CONNECT_ERROR"] = "connect_error";
     ChattyEvent["DISCONNECT"] = "disconnect";
     ChattyEvent["DISCONNECT_DONE"] = "disconnect_done";
     ChattyEvent["DISCONNECT_FAIL"] = "disconnect_fail";
@@ -2983,7 +3002,7 @@ exports.ERR = {
     E4005: 'ChatList Socket error - Check chatlist handler is not initialized. handler: ',
     E4006: 'Chat Socket error - Check chat handler is not initialized. handler: ',
     E4007: "Chat Socket error - ChatConnectOptions should have one of 'at' or 'with'",
-    E4008: "Chat Socket error - When connect with 'with' options, minimum two MemberId are need",
+    E4008: "Chat Socket error - When connect chat with 'with' options, peer member id is needed",
 };
 var ChattyException = /** @class */ (function (_super) {
     __extends(ChattyException, _super);

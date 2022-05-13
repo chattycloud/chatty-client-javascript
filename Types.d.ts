@@ -241,7 +241,8 @@ export interface InitializePayloads {
 export declare enum ChattyEvent {
     CONNECT = "connection",
     CONNECT_DONE = "connect_done",
-    CONNECT_FAIL = "connect_error",
+    CONNECT_FAIL = "connect_fail",
+    CONNECT_ERROR = "connect_error",
     DISCONNECT = "disconnect",
     DISCONNECT_DONE = "disconnect_done",
     DISCONNECT_FAIL = "disconnect_fail",
