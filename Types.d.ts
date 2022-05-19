@@ -7,14 +7,44 @@
                             |__/|_|
 
  */
+export declare enum AppStateEnum {
+    ACTIVE = "ACTIVE",
+    DEACTIVE = "DEACTIVE"
+}
+export declare enum AppPricingEnum {
+    FREE = "FREE",
+    PRODUCTION = "PRODUCTION",
+    ADVANCED = "ADVANCED",
+    ENTERPRISE = "ENTERPRISE"
+}
+export declare enum AppUserRoleEnum {
+    OWNER = "OWNER",
+    DEVELOPER = "DEVELOPER",
+    MANAGER = "MANAGER"
+}
+export declare enum ChatMemberRoleEnum {
+    OWNER = "OWNER",
+    MEMBER = "MEMBER",
+    OBSERVER = "OBSERVER"
+}
+export declare enum MessageTypeEnum {
+    TEXT = "TEXT",
+    FILE = "FILE",
+    JSON = "JSON"
+}
+export declare enum MessageByEnum {
+    USER = "USER",
+    ADMIN = "ADMIN",
+    SYSTEM = "SYSTEM"
+}
 export declare type AppType = {
     id: string;
     name: string;
     server: string;
     apiKey: string;
     firebaseCredentials: FirebaseCredentialsType | null;
-    state: AppStateType;
-    pricing: PricingType;
+    state: AppStateEnum;
+    pricing: AppPricingEnum;
     image: string;
     language: string;
     country: string;
@@ -37,7 +67,7 @@ export declare type AppType = {
     deletedAt: Date | null;
 };
 export declare type AppUserType = {
-    role: AppRoleType;
+    role: AppUserRoleEnum;
     createdAt: Date;
     updatedAt: Date;
     AppId: string;
@@ -77,13 +107,14 @@ export declare type ChatType = {
 };
 export declare type ChatMemberType = {
     missedCount: number;
-    role: ChatRoleType;
+    role: ChatMemberRoleEnum;
     group: string;
     createdAt: Date;
     updatedAt: Date;
     ChatId: string;
     MemberId: string;
     Member: MemberType;
+    AppId: string;
 };
 export declare type MemberType = {
     id: string;
@@ -108,18 +139,19 @@ export declare type MessageType = {
         uri: string;
     }> | null;
     json: object | null;
-    type: MessageFormatType;
+    type: MessageTypeEnum;
     translation: TranslationIndexSignature | null;
-    by: ByType;
+    by: MessageByEnum;
     readReceipt: number;
     createdAt: Date;
     updatedAt: Date;
     deletedAt: Date | null;
+    AppId: string | null;
     ChatId: string;
     SenderId: string | null;
 };
 export declare type InvitationType = {
-    role: string;
+    role: AppUserRoleEnum;
     accept: boolean;
     email: string;
     inviter: string;
@@ -151,12 +183,6 @@ export declare type FirebaseCredentialsType = {
     clientEmail: string;
     projectId: string;
 };
-export declare type ByType = 'USER' | 'ADMIN' | 'SYSTEM';
-export declare type PricingType = 'FREE' | 'PRODUCTION' | 'ADVANCED' | 'ENTERPRISE';
-export declare type AppStateType = 'ACTIVE' | 'DEACTIVE';
-export declare type AppRoleType = 'OWNER' | 'DEVELOPER' | 'MANAGER';
-export declare type ChatRoleType = 'OWNER' | 'MEMBER' | 'OBSERVER';
-export declare type MessageFormatType = 'TEXT' | 'FILE' | 'JSON';
 export interface SystemMessagesIndexSignature {
     [key: string]: string;
 }

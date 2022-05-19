@@ -1715,8 +1715,59 @@ exports.ChatList = ChatList;
 
 "use strict";
 
+/**
+ *
+  ___          _       _____
+ | _ ) __ _ __(_)__ __|_   _|  _ _ __  ___ ___
+ | _ \/ _` (_-< / _|___|| || || | '_ \/ -_|_-<
+ |___/\__,_/__/_\__|    |_| \_, | .__/\___/__/
+                            |__/|_|
+
+ */
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.ChattyEvent = exports.SupportedVideoFormat = exports.SupportedImageFormat = exports.DefaultSystemMessages = exports.MemberPermissionType = void 0;
+exports.ChattyEvent = exports.SupportedVideoFormat = exports.SupportedImageFormat = exports.DefaultSystemMessages = exports.MemberPermissionType = exports.MessageByEnum = exports.MessageTypeEnum = exports.ChatMemberRoleEnum = exports.AppUserRoleEnum = exports.AppPricingEnum = exports.AppStateEnum = void 0;
+var AppStateEnum;
+(function (AppStateEnum) {
+    AppStateEnum["ACTIVE"] = "ACTIVE";
+    AppStateEnum["DEACTIVE"] = "DEACTIVE";
+})(AppStateEnum = exports.AppStateEnum || (exports.AppStateEnum = {}));
+;
+var AppPricingEnum;
+(function (AppPricingEnum) {
+    AppPricingEnum["FREE"] = "FREE";
+    AppPricingEnum["PRODUCTION"] = "PRODUCTION";
+    AppPricingEnum["ADVANCED"] = "ADVANCED";
+    AppPricingEnum["ENTERPRISE"] = "ENTERPRISE";
+})(AppPricingEnum = exports.AppPricingEnum || (exports.AppPricingEnum = {}));
+;
+var AppUserRoleEnum;
+(function (AppUserRoleEnum) {
+    AppUserRoleEnum["OWNER"] = "OWNER";
+    AppUserRoleEnum["DEVELOPER"] = "DEVELOPER";
+    AppUserRoleEnum["MANAGER"] = "MANAGER";
+})(AppUserRoleEnum = exports.AppUserRoleEnum || (exports.AppUserRoleEnum = {}));
+;
+var ChatMemberRoleEnum;
+(function (ChatMemberRoleEnum) {
+    ChatMemberRoleEnum["OWNER"] = "OWNER";
+    ChatMemberRoleEnum["MEMBER"] = "MEMBER";
+    ChatMemberRoleEnum["OBSERVER"] = "OBSERVER";
+})(ChatMemberRoleEnum = exports.ChatMemberRoleEnum || (exports.ChatMemberRoleEnum = {}));
+;
+var MessageTypeEnum;
+(function (MessageTypeEnum) {
+    MessageTypeEnum["TEXT"] = "TEXT";
+    MessageTypeEnum["FILE"] = "FILE";
+    MessageTypeEnum["JSON"] = "JSON";
+})(MessageTypeEnum = exports.MessageTypeEnum || (exports.MessageTypeEnum = {}));
+;
+var MessageByEnum;
+(function (MessageByEnum) {
+    MessageByEnum["USER"] = "USER";
+    MessageByEnum["ADMIN"] = "ADMIN";
+    MessageByEnum["SYSTEM"] = "SYSTEM";
+})(MessageByEnum = exports.MessageByEnum || (exports.MessageByEnum = {}));
+;
 var MemberPermissionType;
 (function (MemberPermissionType) {
     MemberPermissionType[MemberPermissionType["NONE"] = 0] = "NONE";
@@ -2388,7 +2439,7 @@ var Chatty = /** @class */ (function () {
                                 case 0:
                                     _a.trys.push([0, 6, , 7]);
                                     if (!Chatty.apiKey) {
-                                        throw new ChattyException('E2000');
+                                        throw new ChattyException('E2000', 'getMissedCount error');
                                     }
                                     if (!Chatty.apiUrl || !Chatty.member) {
                                         throw new ChattyException('E2001');
@@ -3032,7 +3083,7 @@ var ChattyException = /** @class */ (function (_super) {
                 message = "Chatty error - Check payload of member in init function. id and name should be passed";
                 break;
             case 'E2000':
-                message = "Chatty error - App Key is not valid. Please check apiKey param of Chatty.init function in your source code";
+                message = "Chatty error - ".concat(customMessage, " App Key is not valid. Please check apiKey param of Chatty.init function in your source code");
                 break;
             case 'E2001':
                 message = "Chatty error - Check Chatty class was initialized";
@@ -3062,10 +3113,10 @@ var ChattyException = /** @class */ (function (_super) {
                 message = "Chat Socket error - Check chat instance was created or not";
                 break;
             case 'E4003':
-                message = "ChatList Socket error - Check chatlist socket connection";
+                message = exports.ERR.E4003;
                 break;
             case 'E4004':
-                message = "Chat Socket error - Check chat socket connection";
+                message = exports.ERR.E4004;
                 break;
             case 'E4005':
                 message = "ChatList Socket error - Check chatlist handler is not initialized. handler: ".concat(customMessage);
@@ -3074,10 +3125,10 @@ var ChattyException = /** @class */ (function (_super) {
                 message = "Chat Socket error - Check chat handler is not initialized. handler: ".concat(customMessage);
                 break;
             case 'E4007':
-                message = "Chat Socket error - ChatConnectOptions should have one of 'at' or 'with'";
+                message = exports.ERR.E4007;
                 break;
             case 'E4008':
-                message = "Chat Socket error - When connect with 'with' options, minimum two MemberId are need";
+                message = exports.ERR.E4008;
                 break;
             default:
                 message = "Chatty Unknown error ".concat(customMessage);
