@@ -73,6 +73,7 @@ export declare type ChatType = {
     updatedAt: Date;
     deletedAt: Date | null;
     AppId: string;
+    Members: Array<ChatMemberType>;
 };
 export declare type ChatMemberType = {
     missedCount: number;
@@ -82,6 +83,7 @@ export declare type ChatMemberType = {
     updatedAt: Date;
     ChatId: string;
     MemberId: string;
+    Member: MemberType;
 };
 export declare type MemberType = {
     id: string;
