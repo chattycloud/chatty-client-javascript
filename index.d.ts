@@ -115,7 +115,7 @@ declare class Chatty {
      */
     static createMessage(message: any, system?: boolean): Promise<unknown>;
     static getMissedCount(): Promise<MissedCountType>;
-    static getMembersByGroup(group: string): Promise<unknown>;
+    static getMembersByGroup(group: string): Promise<Array<ChatType>>;
     /**
      *
      * @param member

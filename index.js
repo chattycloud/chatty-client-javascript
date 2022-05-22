@@ -2274,11 +2274,11 @@ var Chatty = /** @class */ (function () {
             var _this = this;
             return __generator(this, function (_a) {
                 return [2 /*return*/, new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-                        var response, data, json, err_1;
+                        var response, data, err_1;
                         return __generator(this, function (_a) {
                             switch (_a.label) {
                                 case 0:
-                                    _a.trys.push([0, 6, , 7]);
+                                    _a.trys.push([0, 5, , 6]);
                                     if (!payload) {
                                         throw new ChattyException('E1001');
                                     }
@@ -2300,17 +2300,16 @@ var Chatty = /** @class */ (function () {
                                 case 2:
                                     data = _a.sent();
                                     resolve(data);
-                                    return [3 /*break*/, 5];
-                                case 3: return [4 /*yield*/, response.json()];
-                                case 4:
-                                    json = _a.sent();
-                                    throw new ChattyException('E3001', JSON.stringify({ status: response.status, statusText: response.statusText, json: json }));
-                                case 5: return [3 /*break*/, 7];
-                                case 6:
+                                    return [3 /*break*/, 4];
+                                case 3: 
+                                // const json = await response.json();
+                                throw new ChattyException('E3001', "createChat error - response status: ".concat(response.status));
+                                case 4: return [3 /*break*/, 6];
+                                case 5:
                                     err_1 = _a.sent();
                                     reject(err_1);
-                                    return [3 /*break*/, 7];
-                                case 7: return [2 /*return*/];
+                                    return [3 /*break*/, 6];
+                                case 6: return [2 /*return*/];
                             }
                         });
                     }); })];
@@ -2320,11 +2319,11 @@ var Chatty = /** @class */ (function () {
     Chatty.updateChat = function (chat) {
         var _this = this;
         return new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-            var response, data, json, err_2;
+            var response, data, err_2;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        _a.trys.push([0, 6, , 7]);
+                        _a.trys.push([0, 5, , 6]);
                         if (!chat) {
                             throw new ChattyException('E1001');
                         }
@@ -2351,17 +2350,16 @@ var Chatty = /** @class */ (function () {
                     case 2:
                         data = _a.sent();
                         resolve(data);
-                        return [3 /*break*/, 5];
-                    case 3: return [4 /*yield*/, response.json()];
-                    case 4:
-                        json = _a.sent();
-                        throw new ChattyException('E3001', JSON.stringify({ status: response.status, statusText: response.statusText, json: json }));
-                    case 5: return [3 /*break*/, 7];
-                    case 6:
+                        return [3 /*break*/, 4];
+                    case 3: 
+                    // const json = await response.json();
+                    throw new ChattyException('E3001', "updateChat error - response status: ".concat(response.status));
+                    case 4: return [3 /*break*/, 6];
+                    case 5:
                         err_2 = _a.sent();
                         reject(err_2);
-                        return [3 /*break*/, 7];
-                    case 7: return [2 /*return*/];
+                        return [3 /*break*/, 6];
+                    case 6: return [2 /*return*/];
                 }
             });
         }); });
@@ -2381,11 +2379,11 @@ var Chatty = /** @class */ (function () {
             var _this = this;
             return __generator(this, function (_a) {
                 return [2 /*return*/, new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-                        var response, data, json, err_3;
+                        var response, data, err_3;
                         return __generator(this, function (_a) {
                             switch (_a.label) {
                                 case 0:
-                                    _a.trys.push([0, 6, , 7]);
+                                    _a.trys.push([0, 5, , 6]);
                                     if (!message) {
                                         throw new ChattyException('E1001');
                                     }
@@ -2411,17 +2409,16 @@ var Chatty = /** @class */ (function () {
                                 case 2:
                                     data = _a.sent();
                                     resolve(data);
-                                    return [3 /*break*/, 5];
-                                case 3: return [4 /*yield*/, response.json()];
-                                case 4:
-                                    json = _a.sent();
-                                    throw new ChattyException('E3001', JSON.stringify({ status: response.status, statusText: response.statusText, json: json }));
-                                case 5: return [3 /*break*/, 7];
-                                case 6:
+                                    return [3 /*break*/, 4];
+                                case 3: 
+                                // const json = await response.json();
+                                throw new ChattyException('E3001', "createMessage error - response status: ".concat(response.status));
+                                case 4: return [3 /*break*/, 6];
+                                case 5:
                                     err_3 = _a.sent();
                                     reject(err_3);
-                                    return [3 /*break*/, 7];
-                                case 7: return [2 /*return*/];
+                                    return [3 /*break*/, 6];
+                                case 6: return [2 /*return*/];
                             }
                         });
                     }); })];
@@ -2433,11 +2430,11 @@ var Chatty = /** @class */ (function () {
             var _this = this;
             return __generator(this, function (_a) {
                 return [2 /*return*/, new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-                        var response, data, json, err_4;
+                        var response, data, err_4;
                         return __generator(this, function (_a) {
                             switch (_a.label) {
                                 case 0:
-                                    _a.trys.push([0, 6, , 7]);
+                                    _a.trys.push([0, 5, , 6]);
                                     if (!Chatty.apiKey) {
                                         throw new ChattyException('E2000', 'getMissedCount error');
                                     }
@@ -2458,17 +2455,16 @@ var Chatty = /** @class */ (function () {
                                 case 2:
                                     data = _a.sent();
                                     resolve(data);
-                                    return [3 /*break*/, 5];
-                                case 3: return [4 /*yield*/, response.json()];
-                                case 4:
-                                    json = _a.sent();
-                                    throw new ChattyException('E3001', JSON.stringify({ status: response.status, statusText: response.statusText, json: json }));
-                                case 5: return [3 /*break*/, 7];
-                                case 6:
+                                    return [3 /*break*/, 4];
+                                case 3: 
+                                // const json = await response.json();
+                                throw new ChattyException('E3001', "getMissedCount error - response status: ".concat(response.status));
+                                case 4: return [3 /*break*/, 6];
+                                case 5:
                                     err_4 = _a.sent();
                                     reject(err_4);
-                                    return [3 /*break*/, 7];
-                                case 7: return [2 /*return*/];
+                                    return [3 /*break*/, 6];
+                                case 6: return [2 /*return*/];
                             }
                         });
                     }); })];
@@ -2509,7 +2505,7 @@ var Chatty = /** @class */ (function () {
                         return [3 /*break*/, 4];
                     case 3: 
                     // const json = await response.json();
-                    throw new ChattyException('E3001', JSON.stringify({ status: response.status, statusText: response.statusText, json: response }));
+                    throw new ChattyException('E3001', "getMembersByGroup error - response status: ".concat(response.status));
                     case 4: return [3 /*break*/, 6];
                     case 5:
                         err_5 = _a.sent();
@@ -2529,11 +2525,11 @@ var Chatty = /** @class */ (function () {
             var _this = this;
             return __generator(this, function (_a) {
                 return [2 /*return*/, new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-                        var response, member_1, json, err_6;
+                        var response, member_1, err_6;
                         return __generator(this, function (_a) {
                             switch (_a.label) {
                                 case 0:
-                                    _a.trys.push([0, 6, , 7]);
+                                    _a.trys.push([0, 5, , 6]);
                                     if (!member) {
                                         throw new ChattyException('E1001');
                                     }
@@ -2569,17 +2565,16 @@ var Chatty = /** @class */ (function () {
                                         Chatty.member = member_1;
                                     }
                                     resolve(member_1);
-                                    return [3 /*break*/, 5];
-                                case 3: return [4 /*yield*/, response.json()];
-                                case 4:
-                                    json = _a.sent();
-                                    throw new ChattyException('E3001', JSON.stringify({ status: response.status, statusText: response.statusText, json: json }));
-                                case 5: return [3 /*break*/, 7];
-                                case 6:
+                                    return [3 /*break*/, 4];
+                                case 3: 
+                                // const json = await response.json();
+                                throw new ChattyException('E3001', "updateMember error - response status: ".concat(response.status));
+                                case 4: return [3 /*break*/, 6];
+                                case 5:
                                     err_6 = _a.sent();
                                     reject(err_6);
-                                    return [3 /*break*/, 7];
-                                case 7: return [2 /*return*/];
+                                    return [3 /*break*/, 6];
+                                case 6: return [2 /*return*/];
                             }
                         });
                     }); })];
@@ -2594,11 +2589,11 @@ var Chatty = /** @class */ (function () {
             var _this = this;
             return __generator(this, function (_a) {
                 return [2 /*return*/, new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-                        var response, data, json, err_7;
+                        var response, data, err_7;
                         return __generator(this, function (_a) {
                             switch (_a.label) {
                                 case 0:
-                                    _a.trys.push([0, 6, , 7]);
+                                    _a.trys.push([0, 5, , 6]);
                                     if (!MemberId || !permission) {
                                         throw new ChattyException('E1001');
                                     }
@@ -2626,17 +2621,16 @@ var Chatty = /** @class */ (function () {
                                 case 2:
                                     data = _a.sent();
                                     resolve(data);
-                                    return [3 /*break*/, 5];
-                                case 3: return [4 /*yield*/, response.json()];
-                                case 4:
-                                    json = _a.sent();
-                                    throw new ChattyException('E3001', JSON.stringify({ status: response.status, statusText: response.statusText, json: json }));
-                                case 5: return [3 /*break*/, 7];
-                                case 6:
+                                    return [3 /*break*/, 4];
+                                case 3: 
+                                // const json = await response.json();
+                                throw new ChattyException('E3001', "changeMemberPermission error - response status: ".concat(response.status));
+                                case 4: return [3 /*break*/, 6];
+                                case 5:
                                     err_7 = _a.sent();
                                     reject(err_7);
-                                    return [3 /*break*/, 7];
-                                case 7: return [2 /*return*/];
+                                    return [3 /*break*/, 6];
+                                case 6: return [2 /*return*/];
                             }
                         });
                     }); })];
@@ -2648,11 +2642,11 @@ var Chatty = /** @class */ (function () {
             var _this = this;
             return __generator(this, function (_a) {
                 return [2 /*return*/, new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-                        var response, data, json, err_8;
+                        var response, data, err_8;
                         return __generator(this, function (_a) {
                             switch (_a.label) {
                                 case 0:
-                                    _a.trys.push([0, 6, , 7]);
+                                    _a.trys.push([0, 5, , 6]);
                                     if (!MemberId) {
                                         throw new ChattyException('E1001');
                                     }
@@ -2679,17 +2673,16 @@ var Chatty = /** @class */ (function () {
                                 case 2:
                                     data = _a.sent();
                                     resolve(data);
-                                    return [3 /*break*/, 5];
-                                case 3: return [4 /*yield*/, response.json()];
-                                case 4:
-                                    json = _a.sent();
-                                    throw new ChattyException('E3001', JSON.stringify({ status: response.status, statusText: response.statusText, json: json }));
-                                case 5: return [3 /*break*/, 7];
-                                case 6:
+                                    return [3 /*break*/, 4];
+                                case 3: 
+                                // const json = await response.json();
+                                throw new ChattyException('E3001', "deleteMember error - response status: ".concat(response.status));
+                                case 4: return [3 /*break*/, 6];
+                                case 5:
                                     err_8 = _a.sent();
                                     reject(err_8);
-                                    return [3 /*break*/, 7];
-                                case 7: return [2 /*return*/];
+                                    return [3 /*break*/, 6];
+                                case 6: return [2 /*return*/];
                             }
                         });
                     }); })];
@@ -2817,11 +2810,11 @@ var Chatty = /** @class */ (function () {
             var _this = this;
             return __generator(this, function (_a) {
                 return [2 /*return*/, new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-                        var response, data, json, err_10;
+                        var response, data, err_10;
                         return __generator(this, function (_a) {
                             switch (_a.label) {
                                 case 0:
-                                    _a.trys.push([0, 6, , 7]);
+                                    _a.trys.push([0, 5, , 6]);
                                     if (!ChatId) {
                                         throw new ChattyException('E1001');
                                     }
@@ -2849,17 +2842,16 @@ var Chatty = /** @class */ (function () {
                                 case 2:
                                     data = _a.sent();
                                     resolve(data);
-                                    return [3 /*break*/, 5];
-                                case 3: return [4 /*yield*/, response.json()];
-                                case 4:
-                                    json = _a.sent();
-                                    throw new ChattyException('E3001', JSON.stringify({ status: response.status, statusText: response.statusText, json: json }));
-                                case 5: return [3 /*break*/, 7];
-                                case 6:
+                                    return [3 /*break*/, 4];
+                                case 3: 
+                                // const json = await response.json();
+                                throw new ChattyException('E3001', "joinChat error - response status: ".concat(response.status));
+                                case 4: return [3 /*break*/, 6];
+                                case 5:
                                     err_10 = _a.sent();
                                     reject(err_10);
-                                    return [3 /*break*/, 7];
-                                case 7: return [2 /*return*/];
+                                    return [3 /*break*/, 6];
+                                case 6: return [2 /*return*/];
                             }
                         });
                     }); })];
@@ -2871,11 +2863,11 @@ var Chatty = /** @class */ (function () {
             var _this = this;
             return __generator(this, function (_a) {
                 return [2 /*return*/, new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-                        var response, data, json, err_11;
+                        var response, data, err_11;
                         return __generator(this, function (_a) {
                             switch (_a.label) {
                                 case 0:
-                                    _a.trys.push([0, 6, , 7]);
+                                    _a.trys.push([0, 5, , 6]);
                                     if (!ChatId) {
                                         throw new ChattyException('E1001');
                                     }
@@ -2903,17 +2895,16 @@ var Chatty = /** @class */ (function () {
                                 case 2:
                                     data = _a.sent();
                                     resolve(data);
-                                    return [3 /*break*/, 5];
-                                case 3: return [4 /*yield*/, response.json()];
-                                case 4:
-                                    json = _a.sent();
-                                    throw new ChattyException('E3001', JSON.stringify({ status: response.status, statusText: response.statusText, json: json }));
-                                case 5: return [3 /*break*/, 7];
-                                case 6:
+                                    return [3 /*break*/, 4];
+                                case 3: 
+                                // const json = await response.json();
+                                throw new ChattyException('E3001', "leaveChat error - response status: ".concat(response.status));
+                                case 4: return [3 /*break*/, 6];
+                                case 5:
                                     err_11 = _a.sent();
                                     reject(err_11);
-                                    return [3 /*break*/, 7];
-                                case 7: return [2 /*return*/];
+                                    return [3 /*break*/, 6];
+                                case 6: return [2 /*return*/];
                             }
                         });
                     }); })];
@@ -2925,11 +2916,11 @@ var Chatty = /** @class */ (function () {
             var _this = this;
             return __generator(this, function (_a) {
                 return [2 /*return*/, new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-                        var response, data, json, err_12;
+                        var response, data, err_12;
                         return __generator(this, function (_a) {
                             switch (_a.label) {
                                 case 0:
-                                    _a.trys.push([0, 6, , 7]);
+                                    _a.trys.push([0, 5, , 6]);
                                     if (!ChatId || !MemberIds) {
                                         throw new ChattyException('E1001');
                                     }
@@ -2957,17 +2948,16 @@ var Chatty = /** @class */ (function () {
                                 case 2:
                                     data = _a.sent();
                                     resolve(data);
-                                    return [3 /*break*/, 5];
-                                case 3: return [4 /*yield*/, response.json()];
-                                case 4:
-                                    json = _a.sent();
-                                    throw new ChattyException('E3001', JSON.stringify({ status: response.status, statusText: response.statusText, json: json }));
-                                case 5: return [3 /*break*/, 7];
-                                case 6:
+                                    return [3 /*break*/, 4];
+                                case 3: 
+                                // const json = await response.json();
+                                throw new ChattyException('E3001', "inviteMembers error - response status: ".concat(response.status));
+                                case 4: return [3 /*break*/, 6];
+                                case 5:
                                     err_12 = _a.sent();
                                     reject(err_12);
-                                    return [3 /*break*/, 7];
-                                case 7: return [2 /*return*/];
+                                    return [3 /*break*/, 6];
+                                case 6: return [2 /*return*/];
                             }
                         });
                     }); })];
@@ -2979,11 +2969,11 @@ var Chatty = /** @class */ (function () {
             var _this = this;
             return __generator(this, function (_a) {
                 return [2 /*return*/, new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-                        var response, data, json, err_13;
+                        var response, data, err_13;
                         return __generator(this, function (_a) {
                             switch (_a.label) {
                                 case 0:
-                                    _a.trys.push([0, 6, , 7]);
+                                    _a.trys.push([0, 5, , 6]);
                                     if (!ChatId || !MemberIds) {
                                         throw new ChattyException('E1001');
                                     }
@@ -3011,17 +3001,16 @@ var Chatty = /** @class */ (function () {
                                 case 2:
                                     data = _a.sent();
                                     resolve(data);
-                                    return [3 /*break*/, 5];
-                                case 3: return [4 /*yield*/, response.json()];
-                                case 4:
-                                    json = _a.sent();
-                                    throw new ChattyException('E3001', JSON.stringify({ status: response.status, statusText: response.statusText, json: json }));
-                                case 5: return [3 /*break*/, 7];
-                                case 6:
+                                    return [3 /*break*/, 4];
+                                case 3: 
+                                // const json = await response.json();
+                                throw new ChattyException('E3001', "excludeMembers error - response status: ".concat(response.status));
+                                case 4: return [3 /*break*/, 6];
+                                case 5:
                                     err_13 = _a.sent();
                                     reject(err_13);
-                                    return [3 /*break*/, 7];
-                                case 7: return [2 /*return*/];
+                                    return [3 /*break*/, 6];
+                                case 6: return [2 /*return*/];
                             }
                         });
                     }); })];
@@ -3153,7 +3142,7 @@ var ChattyException = /** @class */ (function (_super) {
 }(Error));
 exports.ChattyException = ChattyException;
 function reportError(err) {
-    fetch("".concat(Chatty.apiUrl, "/misc/sendmail"), {
+    fetch("".concat(Chatty.apiUrl, "/report"), {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
