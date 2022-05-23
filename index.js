@@ -1956,10 +1956,11 @@ var Chatty = /** @class */ (function () {
     }
     Chatty.init = function (initials) {
         return __awaiter(this, void 0, void 0, function () {
-            var deviceInfo;
+            var deviceInfo, err_1;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
+                        _a.trys.push([0, 2, , 3]);
                         this.apiUrl =  false ? 0 : "https://".concat(dev, "api.chatty-cloud.com");
                         this.apiKey = initials.apiKey;
                         deviceInfo = {
@@ -1969,26 +1970,32 @@ var Chatty = /** @class */ (function () {
                             userAgent: navigator.userAgent,
                             sdkVersion: package_json_1.version
                         };
-                        this.member = __assign(__assign({}, initials.member), { device: deviceInfo });
-                        return [4 /*yield*/, this.updateMember(this.member)];
+                        return [4 /*yield*/, this.updateMember(__assign(__assign({}, initials.member), { device: deviceInfo }))];
                     case 1:
                         _a.sent();
                         if (!this.member) {
-                            console.warn('::: Chatty INIT Fail');
+                            console.warn('::: Chatty INIT Fail - Chatty member is not initialized');
                         }
                         else {
                             console.info('::: Chatty INIT Success');
                         }
-                        return [2 /*return*/];
+                        return [3 /*break*/, 3];
+                    case 2:
+                        err_1 = _a.sent();
+                        console.warn('::: Chatty INIT Fail ', err_1);
+                        return [3 /*break*/, 3];
+                    case 3: return [2 /*return*/];
                 }
             });
         });
     };
     Chatty.exit = function () {
         return __awaiter(this, void 0, void 0, function () {
+            var err_2;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
+                        _a.trys.push([0, 3, , 4]);
                         if (!this.member) return [3 /*break*/, 2];
                         return [4 /*yield*/, this.updateMember({ deviceToken: '' })];
                     case 1:
@@ -1998,7 +2005,12 @@ var Chatty = /** @class */ (function () {
                         this.apiKey = undefined;
                         this.app = undefined;
                         this.member = undefined;
-                        return [2 /*return*/];
+                        return [3 /*break*/, 4];
+                    case 3:
+                        err_2 = _a.sent();
+                        console.warn('::: Chatty EXIT Fail ', err_2);
+                        return [3 /*break*/, 4];
+                    case 4: return [2 /*return*/];
                 }
             });
         });
@@ -2274,7 +2286,7 @@ var Chatty = /** @class */ (function () {
             var _this = this;
             return __generator(this, function (_a) {
                 return [2 /*return*/, new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-                        var response, data, err_1;
+                        var response, data, err_3;
                         return __generator(this, function (_a) {
                             switch (_a.label) {
                                 case 0:
@@ -2306,8 +2318,8 @@ var Chatty = /** @class */ (function () {
                                 throw new ChattyException('E3001', "createChat error - response status: ".concat(response.status));
                                 case 4: return [3 /*break*/, 6];
                                 case 5:
-                                    err_1 = _a.sent();
-                                    reject(err_1);
+                                    err_3 = _a.sent();
+                                    reject(err_3);
                                     return [3 /*break*/, 6];
                                 case 6: return [2 /*return*/];
                             }
@@ -2319,7 +2331,7 @@ var Chatty = /** @class */ (function () {
     Chatty.updateChat = function (chat) {
         var _this = this;
         return new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-            var response, data, err_2;
+            var response, data, err_4;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -2356,8 +2368,8 @@ var Chatty = /** @class */ (function () {
                     throw new ChattyException('E3001', "updateChat error - response status: ".concat(response.status));
                     case 4: return [3 /*break*/, 6];
                     case 5:
-                        err_2 = _a.sent();
-                        reject(err_2);
+                        err_4 = _a.sent();
+                        reject(err_4);
                         return [3 /*break*/, 6];
                     case 6: return [2 /*return*/];
                 }
@@ -2379,7 +2391,7 @@ var Chatty = /** @class */ (function () {
             var _this = this;
             return __generator(this, function (_a) {
                 return [2 /*return*/, new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-                        var response, data, err_3;
+                        var response, data, err_5;
                         return __generator(this, function (_a) {
                             switch (_a.label) {
                                 case 0:
@@ -2415,8 +2427,8 @@ var Chatty = /** @class */ (function () {
                                 throw new ChattyException('E3001', "createMessage error - response status: ".concat(response.status));
                                 case 4: return [3 /*break*/, 6];
                                 case 5:
-                                    err_3 = _a.sent();
-                                    reject(err_3);
+                                    err_5 = _a.sent();
+                                    reject(err_5);
                                     return [3 /*break*/, 6];
                                 case 6: return [2 /*return*/];
                             }
@@ -2430,7 +2442,7 @@ var Chatty = /** @class */ (function () {
             var _this = this;
             return __generator(this, function (_a) {
                 return [2 /*return*/, new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-                        var response, data, err_4;
+                        var response, data, err_6;
                         return __generator(this, function (_a) {
                             switch (_a.label) {
                                 case 0:
@@ -2461,8 +2473,8 @@ var Chatty = /** @class */ (function () {
                                 throw new ChattyException('E3001', "getMissedCount error - response status: ".concat(response.status));
                                 case 4: return [3 /*break*/, 6];
                                 case 5:
-                                    err_4 = _a.sent();
-                                    reject(err_4);
+                                    err_6 = _a.sent();
+                                    reject(err_6);
                                     return [3 /*break*/, 6];
                                 case 6: return [2 /*return*/];
                             }
@@ -2474,7 +2486,7 @@ var Chatty = /** @class */ (function () {
     Chatty.getMembersByGroup = function (group) {
         var _this = this;
         return new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-            var response, data, err_5;
+            var response, data, err_7;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -2508,8 +2520,8 @@ var Chatty = /** @class */ (function () {
                     throw new ChattyException('E3001', "getMembersByGroup error - response status: ".concat(response.status));
                     case 4: return [3 /*break*/, 6];
                     case 5:
-                        err_5 = _a.sent();
-                        reject(err_5);
+                        err_7 = _a.sent();
+                        reject(err_7);
                         return [3 /*break*/, 6];
                     case 6: return [2 /*return*/];
                 }
@@ -2525,27 +2537,29 @@ var Chatty = /** @class */ (function () {
             var _this = this;
             return __generator(this, function (_a) {
                 return [2 /*return*/, new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-                        var response, member_1, err_6;
+                        var response, member_1, err_8;
                         return __generator(this, function (_a) {
                             switch (_a.label) {
                                 case 0:
                                     _a.trys.push([0, 5, , 6]);
                                     if (!member) {
-                                        throw new ChattyException('E1001');
+                                        throw new ChattyException('E1001', 'updateMember has no member parameter');
                                     }
                                     if (!member.id || !member.name) {
-                                        throw new ChattyException('E1007');
+                                        throw new ChattyException('E1007', 'member parameter of updateMember method should have id and name');
                                     }
                                     if (!Chatty.apiKey) {
                                         throw new ChattyException('E2000');
                                     }
-                                    if (!Chatty.apiUrl || !Chatty.member) {
+                                    if (!Chatty.apiUrl) {
                                         throw new ChattyException('E2001');
                                     }
-                                    if (member.id && member.id !== Chatty.member.id) {
-                                        throw new ChattyException('E2004');
+                                    if (Chatty.member) {
+                                        if (member.id && member.id !== Chatty.member.id) {
+                                            throw new ChattyException('E2004');
+                                        }
                                     }
-                                    return [4 /*yield*/, fetch("".concat(Chatty.apiUrl, "/member/").concat(Chatty.member.id), {
+                                    return [4 /*yield*/, fetch("".concat(Chatty.apiUrl, "/member/").concat(member.id), {
                                             method: 'PUT',
                                             body: JSON.stringify(member),
                                             headers: {
@@ -2571,8 +2585,8 @@ var Chatty = /** @class */ (function () {
                                 throw new ChattyException('E3001', "updateMember error - response status: ".concat(response.status));
                                 case 4: return [3 /*break*/, 6];
                                 case 5:
-                                    err_6 = _a.sent();
-                                    reject(err_6);
+                                    err_8 = _a.sent();
+                                    reject(err_8);
                                     return [3 /*break*/, 6];
                                 case 6: return [2 /*return*/];
                             }
@@ -2589,7 +2603,7 @@ var Chatty = /** @class */ (function () {
             var _this = this;
             return __generator(this, function (_a) {
                 return [2 /*return*/, new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-                        var response, data, err_7;
+                        var response, data, err_9;
                         return __generator(this, function (_a) {
                             switch (_a.label) {
                                 case 0:
@@ -2627,8 +2641,8 @@ var Chatty = /** @class */ (function () {
                                 throw new ChattyException('E3001', "changeMemberPermission error - response status: ".concat(response.status));
                                 case 4: return [3 /*break*/, 6];
                                 case 5:
-                                    err_7 = _a.sent();
-                                    reject(err_7);
+                                    err_9 = _a.sent();
+                                    reject(err_9);
                                     return [3 /*break*/, 6];
                                 case 6: return [2 /*return*/];
                             }
@@ -2642,7 +2656,7 @@ var Chatty = /** @class */ (function () {
             var _this = this;
             return __generator(this, function (_a) {
                 return [2 /*return*/, new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-                        var response, data, err_8;
+                        var response, data, err_10;
                         return __generator(this, function (_a) {
                             switch (_a.label) {
                                 case 0:
@@ -2679,8 +2693,8 @@ var Chatty = /** @class */ (function () {
                                 throw new ChattyException('E3001', "deleteMember error - response status: ".concat(response.status));
                                 case 4: return [3 /*break*/, 6];
                                 case 5:
-                                    err_8 = _a.sent();
-                                    reject(err_8);
+                                    err_10 = _a.sent();
+                                    reject(err_10);
                                     return [3 /*break*/, 6];
                                 case 6: return [2 /*return*/];
                             }
@@ -2734,7 +2748,7 @@ var Chatty = /** @class */ (function () {
             var _this = this;
             return __generator(this, function (_a) {
                 return [2 /*return*/, new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-                        var CF_DELIVERY_1, result, err_9;
+                        var CF_DELIVERY_1, result, err_11;
                         var _this = this;
                         return __generator(this, function (_a) {
                             switch (_a.label) {
@@ -2769,9 +2783,6 @@ var Chatty = /** @class */ (function () {
                                                         json = _b.sent();
                                                         form = new FormData();
                                                         form.append('file', file);
-                                                        // const resp = await fetch(file.uri);
-                                                        // const blob = await resp.blob();
-                                                        console.debug('nuno', json);
                                                         return [4 /*yield*/, fetch(json.uploadURL, {
                                                                 method: 'POST',
                                                                 body: form
@@ -2795,8 +2806,8 @@ var Chatty = /** @class */ (function () {
                                     resolve(result);
                                     return [3 /*break*/, 3];
                                 case 2:
-                                    err_9 = _a.sent();
-                                    reject(err_9);
+                                    err_11 = _a.sent();
+                                    reject(err_11);
                                     return [3 /*break*/, 3];
                                 case 3: return [2 /*return*/];
                             }
@@ -2810,7 +2821,7 @@ var Chatty = /** @class */ (function () {
             var _this = this;
             return __generator(this, function (_a) {
                 return [2 /*return*/, new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-                        var response, data, err_10;
+                        var response, data, err_12;
                         return __generator(this, function (_a) {
                             switch (_a.label) {
                                 case 0:
@@ -2848,8 +2859,8 @@ var Chatty = /** @class */ (function () {
                                 throw new ChattyException('E3001', "joinChat error - response status: ".concat(response.status));
                                 case 4: return [3 /*break*/, 6];
                                 case 5:
-                                    err_10 = _a.sent();
-                                    reject(err_10);
+                                    err_12 = _a.sent();
+                                    reject(err_12);
                                     return [3 /*break*/, 6];
                                 case 6: return [2 /*return*/];
                             }
@@ -2863,7 +2874,7 @@ var Chatty = /** @class */ (function () {
             var _this = this;
             return __generator(this, function (_a) {
                 return [2 /*return*/, new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-                        var response, data, err_11;
+                        var response, data, err_13;
                         return __generator(this, function (_a) {
                             switch (_a.label) {
                                 case 0:
@@ -2901,8 +2912,8 @@ var Chatty = /** @class */ (function () {
                                 throw new ChattyException('E3001', "leaveChat error - response status: ".concat(response.status));
                                 case 4: return [3 /*break*/, 6];
                                 case 5:
-                                    err_11 = _a.sent();
-                                    reject(err_11);
+                                    err_13 = _a.sent();
+                                    reject(err_13);
                                     return [3 /*break*/, 6];
                                 case 6: return [2 /*return*/];
                             }
@@ -2916,7 +2927,7 @@ var Chatty = /** @class */ (function () {
             var _this = this;
             return __generator(this, function (_a) {
                 return [2 /*return*/, new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-                        var response, data, err_12;
+                        var response, data, err_14;
                         return __generator(this, function (_a) {
                             switch (_a.label) {
                                 case 0:
@@ -2954,8 +2965,8 @@ var Chatty = /** @class */ (function () {
                                 throw new ChattyException('E3001', "inviteMembers error - response status: ".concat(response.status));
                                 case 4: return [3 /*break*/, 6];
                                 case 5:
-                                    err_12 = _a.sent();
-                                    reject(err_12);
+                                    err_14 = _a.sent();
+                                    reject(err_14);
                                     return [3 /*break*/, 6];
                                 case 6: return [2 /*return*/];
                             }
@@ -2969,7 +2980,7 @@ var Chatty = /** @class */ (function () {
             var _this = this;
             return __generator(this, function (_a) {
                 return [2 /*return*/, new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-                        var response, data, err_13;
+                        var response, data, err_15;
                         return __generator(this, function (_a) {
                             switch (_a.label) {
                                 case 0:
@@ -3007,8 +3018,8 @@ var Chatty = /** @class */ (function () {
                                 throw new ChattyException('E3001', "excludeMembers error - response status: ".concat(response.status));
                                 case 4: return [3 /*break*/, 6];
                                 case 5:
-                                    err_13 = _a.sent();
-                                    reject(err_13);
+                                    err_15 = _a.sent();
+                                    reject(err_15);
                                     return [3 /*break*/, 6];
                                 case 6: return [2 /*return*/];
                             }
@@ -3051,7 +3062,7 @@ var ChattyException = /** @class */ (function (_super) {
         var message;
         switch (errorCode) {
             case 'E1001':
-                message = "Chatty error - Check function parameters are proper";
+                message = "Chatty error - ".concat(customMessage || 'Check function parameters are proper');
                 break;
             case 'E1002':
                 message = "Chatty error - Check type of files parameters exist or not";
@@ -3075,7 +3086,7 @@ var ChattyException = /** @class */ (function (_super) {
                 message = "Chatty error - ".concat(customMessage, " App Key is not valid. Please check apiKey param of Chatty.init function in your source code");
                 break;
             case 'E2001':
-                message = "Chatty error - Check Chatty class was initialized";
+                message = "Chatty error - Chatty was not initialized";
                 break;
             case 'E2002':
                 message = "Chatty error - Chat instance does not exist";
@@ -6593,7 +6604,7 @@ exports.hasBinary = hasBinary;
 /***/ ((module) => {
 
 "use strict";
-module.exports = JSON.parse('{"name":"chatty-client","version":"1.0.4","description":"","main":"lib/src/index.js","types":"lib/src/index.d.ts","scripts":{"chatty-types":"rm -rf ./src/chatty-types && cp -r ~/chatty/server/chatty-types ./src/","--------- dev build guide -------":"git push > npm version patch > yarn build.dev > npm publish","--------- pro build guide -------":"git push > npm version minor > yarn build.pro > npm publish","build.local":"rm -rf .git/index.lock && rm -rf ./lib && webpack --config webpack.config.ts --env MODE=none","build.dev":"rm -rf .git/index.lock && rm -rf ./lib && webpack --config webpack.config.ts --env MODE=development && cp lib/src/* ../chatty-client-javascript/","build.pro":"rm -rf .git/index.lock && rm -rf ./lib && webpack --config webpack.config.ts --env MODE=production && cp lib/src/* ../chatty-client-javascript/","build":"webpack --config webpack.config.ts --env MODE=production && cp lib/src/* ../chatty-client-javascript/"},"repository":"https://github.com/chatty-cloud/chatty-cloud-sdk.git","bugs":{"url":"https://github.com/chatty-cloud/chatty-cloud-sdk/issues","email":"administrator@chatty-cloud.com"},"homepage":"https://www.chatty-cloud.com","keywords":[],"files":["lib"],"author":"chatty-cloud<administrator@chatty-cloud.com>","license":"ISC","dependencies":{"socket.io-client":"^4.1.3"},"devDependencies":{"@types/node":"^16.6.0","@types/webpack":"^5.28.0","path":"^0.12.7","ts-loader":"^9.2.5","ts-node":"^10.2.0","typescript":"^4.3.5","webpack":"^5.50.0","webpack-cli":"^4.7.2"}}');
+module.exports = JSON.parse('{"name":"chatty-client","version":"0.0.2","description":"","main":"lib/src/index.js","types":"lib/src/index.d.ts","scripts":{"chatty-types":"rm -rf ./src/chatty-types && cp -r ~/chatty/server/chatty-types ./src/","--------- dev build guide -------":"git push > npm version patch > yarn build.dev > npm publish","--------- pro build guide -------":"git push > npm version minor > yarn build.pro > npm publish","build.local":"rm -rf .git/index.lock && rm -rf ./lib && webpack --config webpack.config.ts --env MODE=none","build.dev":"rm -rf .git/index.lock && rm -rf ./lib && webpack --config webpack.config.ts --env MODE=development && cp lib/src/* ../chatty-client-javascript/","build.pro":"rm -rf .git/index.lock && rm -rf ./lib && webpack --config webpack.config.ts --env MODE=production && cp lib/src/* ../chatty-client-javascript/","build":"webpack --config webpack.config.ts --env MODE=production && cp lib/src/* ../chatty-client-javascript/"},"repository":"https://github.com/chatty-cloud/chatty-cloud-sdk.git","bugs":{"url":"https://github.com/chatty-cloud/chatty-cloud-sdk/issues","email":"administrator@chatty-cloud.com"},"homepage":"https://www.chatty-cloud.com","keywords":[],"files":["lib"],"author":"chatty-cloud<administrator@chatty-cloud.com>","license":"ISC","dependencies":{"socket.io-client":"^4.1.3"},"devDependencies":{"@types/node":"^16.6.0","@types/webpack":"^5.28.0","path":"^0.12.7","ts-loader":"^9.2.5","ts-node":"^10.2.0","typescript":"^4.3.5","webpack":"^5.50.0","webpack-cli":"^4.7.2"}}');
 
 /***/ })
 
