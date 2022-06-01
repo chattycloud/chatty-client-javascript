@@ -1997,7 +1997,7 @@ var Chatty = /** @class */ (function () {
                     case 0:
                         _a.trys.push([0, 3, , 4]);
                         if (!this.member) return [3 /*break*/, 2];
-                        return [4 /*yield*/, this.updateMember({ deviceToken: '' })];
+                        return [4 /*yield*/, this.updateMember({ id: this.member.id, deviceToken: '' })];
                     case 1:
                         _a.sent();
                         _a.label = 2;
@@ -2545,8 +2545,8 @@ var Chatty = /** @class */ (function () {
                                     if (!member) {
                                         throw new ChattyException('E1001', 'updateMember has no member parameter');
                                     }
-                                    if (!member.id || !member.name) {
-                                        throw new ChattyException('E1007', 'member parameter of updateMember method should have id and name');
+                                    if (!member.id) {
+                                        throw new ChattyException('E1007', 'member parameter of updateMember method should have member id ');
                                     }
                                     if (!Chatty.apiKey) {
                                         throw new ChattyException('E2000');
@@ -2559,7 +2559,7 @@ var Chatty = /** @class */ (function () {
                                             throw new ChattyException('E2004');
                                         }
                                     }
-                                    return [4 /*yield*/, fetch("".concat(Chatty.apiUrl, "/member/").concat(member.id), {
+                                    return [4 /*yield*/, fetch("".concat(Chatty.apiUrl, "/member"), {
                                             method: 'PUT',
                                             body: JSON.stringify(member),
                                             headers: {
@@ -2620,7 +2620,7 @@ var Chatty = /** @class */ (function () {
                                     if (Chatty.member.permission < Types_1.MemberPermissionType.ADMIN) {
                                         throw new ChattyException('E2003');
                                     }
-                                    return [4 /*yield*/, fetch("".concat(Chatty.apiUrl, "/member/").concat(MemberId), {
+                                    return [4 /*yield*/, fetch("".concat(Chatty.apiUrl, "/member"), {
                                             method: 'PUT',
                                             body: JSON.stringify({ permission: permission }),
                                             headers: {
@@ -3038,7 +3038,7 @@ exports.ERR = {
     E1005: 'Chatty error - Upload file format not supported',
     E1006: 'Chatty error - Maximum count of uploading files is 4. more than 4 is not allowed',
     E1007: "Chatty error - Check payload of member in init function. id and name should be passed",
-    E2000: 'Chatty error - App Key is not valid. Please check apiKey param of Chatty.init function in your source code',
+    E2000: 'Chatty error - Api Key is not valid. Please check apiKey param of init method',
     E2001: 'Chatty error - Check Chatty class was initialized',
     E2002: 'Chatty error - Chat instance does not exist',
     E2003: 'Chatty error - Member permission not allwed',
@@ -6604,7 +6604,7 @@ exports.hasBinary = hasBinary;
 /***/ ((module) => {
 
 "use strict";
-module.exports = JSON.parse('{"name":"chatty-client","version":"0.0.2","description":"","main":"lib/src/index.js","types":"lib/src/index.d.ts","scripts":{"chatty-types":"rm -rf ./src/chatty-types && cp -r ~/chatty/server/chatty-types ./src/","--------- dev build guide -------":"git push > npm version patch > yarn build.dev > npm publish","--------- pro build guide -------":"git push > npm version minor > yarn build.pro > npm publish","build.local":"rm -rf .git/index.lock && rm -rf ./lib && webpack --config webpack.config.ts --env MODE=none","build.dev":"rm -rf .git/index.lock && rm -rf ./lib && webpack --config webpack.config.ts --env MODE=development && cp lib/src/* ../chatty-client-javascript/","build.pro":"rm -rf .git/index.lock && rm -rf ./lib && webpack --config webpack.config.ts --env MODE=production && cp lib/src/* ../chatty-client-javascript/","build":"webpack --config webpack.config.ts --env MODE=production && cp lib/src/* ../chatty-client-javascript/"},"repository":"https://github.com/chatty-cloud/chatty-cloud-sdk.git","bugs":{"url":"https://github.com/chatty-cloud/chatty-cloud-sdk/issues","email":"administrator@chatty-cloud.com"},"homepage":"https://www.chatty-cloud.com","keywords":[],"files":["lib"],"author":"chatty-cloud<administrator@chatty-cloud.com>","license":"ISC","dependencies":{"socket.io-client":"^4.1.3"},"devDependencies":{"@types/node":"^16.6.0","@types/webpack":"^5.28.0","path":"^0.12.7","ts-loader":"^9.2.5","ts-node":"^10.2.0","typescript":"^4.3.5","webpack":"^5.50.0","webpack-cli":"^4.7.2"}}');
+module.exports = JSON.parse('{"name":"chatty-client","version":"0.0.5","description":"","main":"lib/src/index.js","types":"lib/src/index.d.ts","scripts":{"chatty-types":"rm -rf ./src/chatty-types && cp -r ~/chatty/server/chatty-types ./src/","--------- dev build guide -------":"git push > npm version patch > yarn build.dev > npm publish","--------- pro build guide -------":"git push > npm version minor > yarn build.pro > npm publish","build.local":"rm -rf .git/index.lock && rm -rf ./lib && webpack --config webpack.config.ts --env MODE=none","build.dev":"rm -rf .git/index.lock && rm -rf ./lib && webpack --config webpack.config.ts --env MODE=development && cp lib/src/* ../chatty-client-javascript/","build.pro":"rm -rf .git/index.lock && rm -rf ./lib && webpack --config webpack.config.ts --env MODE=production && cp lib/src/* ../chatty-client-javascript/","build":"webpack --config webpack.config.ts --env MODE=production && cp lib/src/* ../chatty-client-javascript/"},"repository":"https://github.com/chatty-cloud/chatty-cloud-sdk.git","bugs":{"url":"https://github.com/chatty-cloud/chatty-cloud-sdk/issues","email":"administrator@chatty-cloud.com"},"homepage":"https://www.chatty-cloud.com","keywords":[],"files":["lib"],"author":"chatty-cloud<administrator@chatty-cloud.com>","license":"ISC","dependencies":{"socket.io-client":"^4.1.3"},"devDependencies":{"@types/node":"^16.6.0","@types/webpack":"^5.28.0","path":"^0.12.7","ts-loader":"^9.2.5","ts-node":"^10.2.0","typescript":"^4.3.5","webpack":"^5.50.0","webpack-cli":"^4.7.2"}}');
 
 /***/ })
 
