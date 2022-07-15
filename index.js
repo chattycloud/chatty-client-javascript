@@ -253,6 +253,2467 @@ Emitter.prototype.hasListeners = function(event){
 
 /***/ }),
 
+/***/ "./node_modules/axios/index.js":
+/*!*************************************!*\
+  !*** ./node_modules/axios/index.js ***!
+  \*************************************/
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+module.exports = __webpack_require__(/*! ./lib/axios */ "./node_modules/axios/lib/axios.js");
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/adapters/xhr.js":
+/*!************************************************!*\
+  !*** ./node_modules/axios/lib/adapters/xhr.js ***!
+  \************************************************/
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+var utils = __webpack_require__(/*! ./../utils */ "./node_modules/axios/lib/utils.js");
+var settle = __webpack_require__(/*! ./../core/settle */ "./node_modules/axios/lib/core/settle.js");
+var cookies = __webpack_require__(/*! ./../helpers/cookies */ "./node_modules/axios/lib/helpers/cookies.js");
+var buildURL = __webpack_require__(/*! ./../helpers/buildURL */ "./node_modules/axios/lib/helpers/buildURL.js");
+var buildFullPath = __webpack_require__(/*! ../core/buildFullPath */ "./node_modules/axios/lib/core/buildFullPath.js");
+var parseHeaders = __webpack_require__(/*! ./../helpers/parseHeaders */ "./node_modules/axios/lib/helpers/parseHeaders.js");
+var isURLSameOrigin = __webpack_require__(/*! ./../helpers/isURLSameOrigin */ "./node_modules/axios/lib/helpers/isURLSameOrigin.js");
+var transitionalDefaults = __webpack_require__(/*! ../defaults/transitional */ "./node_modules/axios/lib/defaults/transitional.js");
+var AxiosError = __webpack_require__(/*! ../core/AxiosError */ "./node_modules/axios/lib/core/AxiosError.js");
+var CanceledError = __webpack_require__(/*! ../cancel/CanceledError */ "./node_modules/axios/lib/cancel/CanceledError.js");
+var parseProtocol = __webpack_require__(/*! ../helpers/parseProtocol */ "./node_modules/axios/lib/helpers/parseProtocol.js");
+
+module.exports = function xhrAdapter(config) {
+  return new Promise(function dispatchXhrRequest(resolve, reject) {
+    var requestData = config.data;
+    var requestHeaders = config.headers;
+    var responseType = config.responseType;
+    var onCanceled;
+    function done() {
+      if (config.cancelToken) {
+        config.cancelToken.unsubscribe(onCanceled);
+      }
+
+      if (config.signal) {
+        config.signal.removeEventListener('abort', onCanceled);
+      }
+    }
+
+    if (utils.isFormData(requestData) && utils.isStandardBrowserEnv()) {
+      delete requestHeaders['Content-Type']; // Let the browser set it
+    }
+
+    var request = new XMLHttpRequest();
+
+    // HTTP basic authentication
+    if (config.auth) {
+      var username = config.auth.username || '';
+      var password = config.auth.password ? unescape(encodeURIComponent(config.auth.password)) : '';
+      requestHeaders.Authorization = 'Basic ' + btoa(username + ':' + password);
+    }
+
+    var fullPath = buildFullPath(config.baseURL, config.url);
+
+    request.open(config.method.toUpperCase(), buildURL(fullPath, config.params, config.paramsSerializer), true);
+
+    // Set the request timeout in MS
+    request.timeout = config.timeout;
+
+    function onloadend() {
+      if (!request) {
+        return;
+      }
+      // Prepare the response
+      var responseHeaders = 'getAllResponseHeaders' in request ? parseHeaders(request.getAllResponseHeaders()) : null;
+      var responseData = !responseType || responseType === 'text' ||  responseType === 'json' ?
+        request.responseText : request.response;
+      var response = {
+        data: responseData,
+        status: request.status,
+        statusText: request.statusText,
+        headers: responseHeaders,
+        config: config,
+        request: request
+      };
+
+      settle(function _resolve(value) {
+        resolve(value);
+        done();
+      }, function _reject(err) {
+        reject(err);
+        done();
+      }, response);
+
+      // Clean up request
+      request = null;
+    }
+
+    if ('onloadend' in request) {
+      // Use onloadend if available
+      request.onloadend = onloadend;
+    } else {
+      // Listen for ready state to emulate onloadend
+      request.onreadystatechange = function handleLoad() {
+        if (!request || request.readyState !== 4) {
+          return;
+        }
+
+        // The request errored out and we didn't get a response, this will be
+        // handled by onerror instead
+        // With one exception: request that using file: protocol, most browsers
+        // will return status as 0 even though it's a successful request
+        if (request.status === 0 && !(request.responseURL && request.responseURL.indexOf('file:') === 0)) {
+          return;
+        }
+        // readystate handler is calling before onerror or ontimeout handlers,
+        // so we should call onloadend on the next 'tick'
+        setTimeout(onloadend);
+      };
+    }
+
+    // Handle browser request cancellation (as opposed to a manual cancellation)
+    request.onabort = function handleAbort() {
+      if (!request) {
+        return;
+      }
+
+      reject(new AxiosError('Request aborted', AxiosError.ECONNABORTED, config, request));
+
+      // Clean up request
+      request = null;
+    };
+
+    // Handle low level network errors
+    request.onerror = function handleError() {
+      // Real errors are hidden from us by the browser
+      // onerror should only fire if it's a network error
+      reject(new AxiosError('Network Error', AxiosError.ERR_NETWORK, config, request, request));
+
+      // Clean up request
+      request = null;
+    };
+
+    // Handle timeout
+    request.ontimeout = function handleTimeout() {
+      var timeoutErrorMessage = config.timeout ? 'timeout of ' + config.timeout + 'ms exceeded' : 'timeout exceeded';
+      var transitional = config.transitional || transitionalDefaults;
+      if (config.timeoutErrorMessage) {
+        timeoutErrorMessage = config.timeoutErrorMessage;
+      }
+      reject(new AxiosError(
+        timeoutErrorMessage,
+        transitional.clarifyTimeoutError ? AxiosError.ETIMEDOUT : AxiosError.ECONNABORTED,
+        config,
+        request));
+
+      // Clean up request
+      request = null;
+    };
+
+    // Add xsrf header
+    // This is only done if running in a standard browser environment.
+    // Specifically not if we're in a web worker, or react-native.
+    if (utils.isStandardBrowserEnv()) {
+      // Add xsrf header
+      var xsrfValue = (config.withCredentials || isURLSameOrigin(fullPath)) && config.xsrfCookieName ?
+        cookies.read(config.xsrfCookieName) :
+        undefined;
+
+      if (xsrfValue) {
+        requestHeaders[config.xsrfHeaderName] = xsrfValue;
+      }
+    }
+
+    // Add headers to the request
+    if ('setRequestHeader' in request) {
+      utils.forEach(requestHeaders, function setRequestHeader(val, key) {
+        if (typeof requestData === 'undefined' && key.toLowerCase() === 'content-type') {
+          // Remove Content-Type if data is undefined
+          delete requestHeaders[key];
+        } else {
+          // Otherwise add header to the request
+          request.setRequestHeader(key, val);
+        }
+      });
+    }
+
+    // Add withCredentials to request if needed
+    if (!utils.isUndefined(config.withCredentials)) {
+      request.withCredentials = !!config.withCredentials;
+    }
+
+    // Add responseType to request if needed
+    if (responseType && responseType !== 'json') {
+      request.responseType = config.responseType;
+    }
+
+    // Handle progress if needed
+    if (typeof config.onDownloadProgress === 'function') {
+      request.addEventListener('progress', config.onDownloadProgress);
+    }
+
+    // Not all browsers support upload events
+    if (typeof config.onUploadProgress === 'function' && request.upload) {
+      request.upload.addEventListener('progress', config.onUploadProgress);
+    }
+
+    if (config.cancelToken || config.signal) {
+      // Handle cancellation
+      // eslint-disable-next-line func-names
+      onCanceled = function(cancel) {
+        if (!request) {
+          return;
+        }
+        reject(!cancel || (cancel && cancel.type) ? new CanceledError() : cancel);
+        request.abort();
+        request = null;
+      };
+
+      config.cancelToken && config.cancelToken.subscribe(onCanceled);
+      if (config.signal) {
+        config.signal.aborted ? onCanceled() : config.signal.addEventListener('abort', onCanceled);
+      }
+    }
+
+    if (!requestData) {
+      requestData = null;
+    }
+
+    var protocol = parseProtocol(fullPath);
+
+    if (protocol && [ 'http', 'https', 'file' ].indexOf(protocol) === -1) {
+      reject(new AxiosError('Unsupported protocol ' + protocol + ':', AxiosError.ERR_BAD_REQUEST, config));
+      return;
+    }
+
+
+    // Send the request
+    request.send(requestData);
+  });
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/axios.js":
+/*!*****************************************!*\
+  !*** ./node_modules/axios/lib/axios.js ***!
+  \*****************************************/
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+var utils = __webpack_require__(/*! ./utils */ "./node_modules/axios/lib/utils.js");
+var bind = __webpack_require__(/*! ./helpers/bind */ "./node_modules/axios/lib/helpers/bind.js");
+var Axios = __webpack_require__(/*! ./core/Axios */ "./node_modules/axios/lib/core/Axios.js");
+var mergeConfig = __webpack_require__(/*! ./core/mergeConfig */ "./node_modules/axios/lib/core/mergeConfig.js");
+var defaults = __webpack_require__(/*! ./defaults */ "./node_modules/axios/lib/defaults/index.js");
+
+/**
+ * Create an instance of Axios
+ *
+ * @param {Object} defaultConfig The default config for the instance
+ * @return {Axios} A new instance of Axios
+ */
+function createInstance(defaultConfig) {
+  var context = new Axios(defaultConfig);
+  var instance = bind(Axios.prototype.request, context);
+
+  // Copy axios.prototype to instance
+  utils.extend(instance, Axios.prototype, context);
+
+  // Copy context to instance
+  utils.extend(instance, context);
+
+  // Factory for creating new instances
+  instance.create = function create(instanceConfig) {
+    return createInstance(mergeConfig(defaultConfig, instanceConfig));
+  };
+
+  return instance;
+}
+
+// Create the default instance to be exported
+var axios = createInstance(defaults);
+
+// Expose Axios class to allow class inheritance
+axios.Axios = Axios;
+
+// Expose Cancel & CancelToken
+axios.CanceledError = __webpack_require__(/*! ./cancel/CanceledError */ "./node_modules/axios/lib/cancel/CanceledError.js");
+axios.CancelToken = __webpack_require__(/*! ./cancel/CancelToken */ "./node_modules/axios/lib/cancel/CancelToken.js");
+axios.isCancel = __webpack_require__(/*! ./cancel/isCancel */ "./node_modules/axios/lib/cancel/isCancel.js");
+axios.VERSION = (__webpack_require__(/*! ./env/data */ "./node_modules/axios/lib/env/data.js").version);
+axios.toFormData = __webpack_require__(/*! ./helpers/toFormData */ "./node_modules/axios/lib/helpers/toFormData.js");
+
+// Expose AxiosError class
+axios.AxiosError = __webpack_require__(/*! ../lib/core/AxiosError */ "./node_modules/axios/lib/core/AxiosError.js");
+
+// alias for CanceledError for backward compatibility
+axios.Cancel = axios.CanceledError;
+
+// Expose all/spread
+axios.all = function all(promises) {
+  return Promise.all(promises);
+};
+axios.spread = __webpack_require__(/*! ./helpers/spread */ "./node_modules/axios/lib/helpers/spread.js");
+
+// Expose isAxiosError
+axios.isAxiosError = __webpack_require__(/*! ./helpers/isAxiosError */ "./node_modules/axios/lib/helpers/isAxiosError.js");
+
+module.exports = axios;
+
+// Allow use of default import syntax in TypeScript
+module.exports["default"] = axios;
+
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/cancel/CancelToken.js":
+/*!******************************************************!*\
+  !*** ./node_modules/axios/lib/cancel/CancelToken.js ***!
+  \******************************************************/
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+var CanceledError = __webpack_require__(/*! ./CanceledError */ "./node_modules/axios/lib/cancel/CanceledError.js");
+
+/**
+ * A `CancelToken` is an object that can be used to request cancellation of an operation.
+ *
+ * @class
+ * @param {Function} executor The executor function.
+ */
+function CancelToken(executor) {
+  if (typeof executor !== 'function') {
+    throw new TypeError('executor must be a function.');
+  }
+
+  var resolvePromise;
+
+  this.promise = new Promise(function promiseExecutor(resolve) {
+    resolvePromise = resolve;
+  });
+
+  var token = this;
+
+  // eslint-disable-next-line func-names
+  this.promise.then(function(cancel) {
+    if (!token._listeners) return;
+
+    var i;
+    var l = token._listeners.length;
+
+    for (i = 0; i < l; i++) {
+      token._listeners[i](cancel);
+    }
+    token._listeners = null;
+  });
+
+  // eslint-disable-next-line func-names
+  this.promise.then = function(onfulfilled) {
+    var _resolve;
+    // eslint-disable-next-line func-names
+    var promise = new Promise(function(resolve) {
+      token.subscribe(resolve);
+      _resolve = resolve;
+    }).then(onfulfilled);
+
+    promise.cancel = function reject() {
+      token.unsubscribe(_resolve);
+    };
+
+    return promise;
+  };
+
+  executor(function cancel(message) {
+    if (token.reason) {
+      // Cancellation has already been requested
+      return;
+    }
+
+    token.reason = new CanceledError(message);
+    resolvePromise(token.reason);
+  });
+}
+
+/**
+ * Throws a `CanceledError` if cancellation has been requested.
+ */
+CancelToken.prototype.throwIfRequested = function throwIfRequested() {
+  if (this.reason) {
+    throw this.reason;
+  }
+};
+
+/**
+ * Subscribe to the cancel signal
+ */
+
+CancelToken.prototype.subscribe = function subscribe(listener) {
+  if (this.reason) {
+    listener(this.reason);
+    return;
+  }
+
+  if (this._listeners) {
+    this._listeners.push(listener);
+  } else {
+    this._listeners = [listener];
+  }
+};
+
+/**
+ * Unsubscribe from the cancel signal
+ */
+
+CancelToken.prototype.unsubscribe = function unsubscribe(listener) {
+  if (!this._listeners) {
+    return;
+  }
+  var index = this._listeners.indexOf(listener);
+  if (index !== -1) {
+    this._listeners.splice(index, 1);
+  }
+};
+
+/**
+ * Returns an object that contains a new `CancelToken` and a function that, when called,
+ * cancels the `CancelToken`.
+ */
+CancelToken.source = function source() {
+  var cancel;
+  var token = new CancelToken(function executor(c) {
+    cancel = c;
+  });
+  return {
+    token: token,
+    cancel: cancel
+  };
+};
+
+module.exports = CancelToken;
+
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/cancel/CanceledError.js":
+/*!********************************************************!*\
+  !*** ./node_modules/axios/lib/cancel/CanceledError.js ***!
+  \********************************************************/
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+var AxiosError = __webpack_require__(/*! ../core/AxiosError */ "./node_modules/axios/lib/core/AxiosError.js");
+var utils = __webpack_require__(/*! ../utils */ "./node_modules/axios/lib/utils.js");
+
+/**
+ * A `CanceledError` is an object that is thrown when an operation is canceled.
+ *
+ * @class
+ * @param {string=} message The message.
+ */
+function CanceledError(message) {
+  // eslint-disable-next-line no-eq-null,eqeqeq
+  AxiosError.call(this, message == null ? 'canceled' : message, AxiosError.ERR_CANCELED);
+  this.name = 'CanceledError';
+}
+
+utils.inherits(CanceledError, AxiosError, {
+  __CANCEL__: true
+});
+
+module.exports = CanceledError;
+
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/cancel/isCancel.js":
+/*!***************************************************!*\
+  !*** ./node_modules/axios/lib/cancel/isCancel.js ***!
+  \***************************************************/
+/***/ ((module) => {
+
+"use strict";
+
+
+module.exports = function isCancel(value) {
+  return !!(value && value.__CANCEL__);
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/core/Axios.js":
+/*!**********************************************!*\
+  !*** ./node_modules/axios/lib/core/Axios.js ***!
+  \**********************************************/
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+var utils = __webpack_require__(/*! ./../utils */ "./node_modules/axios/lib/utils.js");
+var buildURL = __webpack_require__(/*! ../helpers/buildURL */ "./node_modules/axios/lib/helpers/buildURL.js");
+var InterceptorManager = __webpack_require__(/*! ./InterceptorManager */ "./node_modules/axios/lib/core/InterceptorManager.js");
+var dispatchRequest = __webpack_require__(/*! ./dispatchRequest */ "./node_modules/axios/lib/core/dispatchRequest.js");
+var mergeConfig = __webpack_require__(/*! ./mergeConfig */ "./node_modules/axios/lib/core/mergeConfig.js");
+var buildFullPath = __webpack_require__(/*! ./buildFullPath */ "./node_modules/axios/lib/core/buildFullPath.js");
+var validator = __webpack_require__(/*! ../helpers/validator */ "./node_modules/axios/lib/helpers/validator.js");
+
+var validators = validator.validators;
+/**
+ * Create a new instance of Axios
+ *
+ * @param {Object} instanceConfig The default config for the instance
+ */
+function Axios(instanceConfig) {
+  this.defaults = instanceConfig;
+  this.interceptors = {
+    request: new InterceptorManager(),
+    response: new InterceptorManager()
+  };
+}
+
+/**
+ * Dispatch a request
+ *
+ * @param {Object} config The config specific for this request (merged with this.defaults)
+ */
+Axios.prototype.request = function request(configOrUrl, config) {
+  /*eslint no-param-reassign:0*/
+  // Allow for axios('example/url'[, config]) a la fetch API
+  if (typeof configOrUrl === 'string') {
+    config = config || {};
+    config.url = configOrUrl;
+  } else {
+    config = configOrUrl || {};
+  }
+
+  config = mergeConfig(this.defaults, config);
+
+  // Set config.method
+  if (config.method) {
+    config.method = config.method.toLowerCase();
+  } else if (this.defaults.method) {
+    config.method = this.defaults.method.toLowerCase();
+  } else {
+    config.method = 'get';
+  }
+
+  var transitional = config.transitional;
+
+  if (transitional !== undefined) {
+    validator.assertOptions(transitional, {
+      silentJSONParsing: validators.transitional(validators.boolean),
+      forcedJSONParsing: validators.transitional(validators.boolean),
+      clarifyTimeoutError: validators.transitional(validators.boolean)
+    }, false);
+  }
+
+  // filter out skipped interceptors
+  var requestInterceptorChain = [];
+  var synchronousRequestInterceptors = true;
+  this.interceptors.request.forEach(function unshiftRequestInterceptors(interceptor) {
+    if (typeof interceptor.runWhen === 'function' && interceptor.runWhen(config) === false) {
+      return;
+    }
+
+    synchronousRequestInterceptors = synchronousRequestInterceptors && interceptor.synchronous;
+
+    requestInterceptorChain.unshift(interceptor.fulfilled, interceptor.rejected);
+  });
+
+  var responseInterceptorChain = [];
+  this.interceptors.response.forEach(function pushResponseInterceptors(interceptor) {
+    responseInterceptorChain.push(interceptor.fulfilled, interceptor.rejected);
+  });
+
+  var promise;
+
+  if (!synchronousRequestInterceptors) {
+    var chain = [dispatchRequest, undefined];
+
+    Array.prototype.unshift.apply(chain, requestInterceptorChain);
+    chain = chain.concat(responseInterceptorChain);
+
+    promise = Promise.resolve(config);
+    while (chain.length) {
+      promise = promise.then(chain.shift(), chain.shift());
+    }
+
+    return promise;
+  }
+
+
+  var newConfig = config;
+  while (requestInterceptorChain.length) {
+    var onFulfilled = requestInterceptorChain.shift();
+    var onRejected = requestInterceptorChain.shift();
+    try {
+      newConfig = onFulfilled(newConfig);
+    } catch (error) {
+      onRejected(error);
+      break;
+    }
+  }
+
+  try {
+    promise = dispatchRequest(newConfig);
+  } catch (error) {
+    return Promise.reject(error);
+  }
+
+  while (responseInterceptorChain.length) {
+    promise = promise.then(responseInterceptorChain.shift(), responseInterceptorChain.shift());
+  }
+
+  return promise;
+};
+
+Axios.prototype.getUri = function getUri(config) {
+  config = mergeConfig(this.defaults, config);
+  var fullPath = buildFullPath(config.baseURL, config.url);
+  return buildURL(fullPath, config.params, config.paramsSerializer);
+};
+
+// Provide aliases for supported request methods
+utils.forEach(['delete', 'get', 'head', 'options'], function forEachMethodNoData(method) {
+  /*eslint func-names:0*/
+  Axios.prototype[method] = function(url, config) {
+    return this.request(mergeConfig(config || {}, {
+      method: method,
+      url: url,
+      data: (config || {}).data
+    }));
+  };
+});
+
+utils.forEach(['post', 'put', 'patch'], function forEachMethodWithData(method) {
+  /*eslint func-names:0*/
+
+  function generateHTTPMethod(isForm) {
+    return function httpMethod(url, data, config) {
+      return this.request(mergeConfig(config || {}, {
+        method: method,
+        headers: isForm ? {
+          'Content-Type': 'multipart/form-data'
+        } : {},
+        url: url,
+        data: data
+      }));
+    };
+  }
+
+  Axios.prototype[method] = generateHTTPMethod();
+
+  Axios.prototype[method + 'Form'] = generateHTTPMethod(true);
+});
+
+module.exports = Axios;
+
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/core/AxiosError.js":
+/*!***************************************************!*\
+  !*** ./node_modules/axios/lib/core/AxiosError.js ***!
+  \***************************************************/
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+var utils = __webpack_require__(/*! ../utils */ "./node_modules/axios/lib/utils.js");
+
+/**
+ * Create an Error with the specified message, config, error code, request and response.
+ *
+ * @param {string} message The error message.
+ * @param {string} [code] The error code (for example, 'ECONNABORTED').
+ * @param {Object} [config] The config.
+ * @param {Object} [request] The request.
+ * @param {Object} [response] The response.
+ * @returns {Error} The created error.
+ */
+function AxiosError(message, code, config, request, response) {
+  Error.call(this);
+  this.message = message;
+  this.name = 'AxiosError';
+  code && (this.code = code);
+  config && (this.config = config);
+  request && (this.request = request);
+  response && (this.response = response);
+}
+
+utils.inherits(AxiosError, Error, {
+  toJSON: function toJSON() {
+    return {
+      // Standard
+      message: this.message,
+      name: this.name,
+      // Microsoft
+      description: this.description,
+      number: this.number,
+      // Mozilla
+      fileName: this.fileName,
+      lineNumber: this.lineNumber,
+      columnNumber: this.columnNumber,
+      stack: this.stack,
+      // Axios
+      config: this.config,
+      code: this.code,
+      status: this.response && this.response.status ? this.response.status : null
+    };
+  }
+});
+
+var prototype = AxiosError.prototype;
+var descriptors = {};
+
+[
+  'ERR_BAD_OPTION_VALUE',
+  'ERR_BAD_OPTION',
+  'ECONNABORTED',
+  'ETIMEDOUT',
+  'ERR_NETWORK',
+  'ERR_FR_TOO_MANY_REDIRECTS',
+  'ERR_DEPRECATED',
+  'ERR_BAD_RESPONSE',
+  'ERR_BAD_REQUEST',
+  'ERR_CANCELED'
+// eslint-disable-next-line func-names
+].forEach(function(code) {
+  descriptors[code] = {value: code};
+});
+
+Object.defineProperties(AxiosError, descriptors);
+Object.defineProperty(prototype, 'isAxiosError', {value: true});
+
+// eslint-disable-next-line func-names
+AxiosError.from = function(error, code, config, request, response, customProps) {
+  var axiosError = Object.create(prototype);
+
+  utils.toFlatObject(error, axiosError, function filter(obj) {
+    return obj !== Error.prototype;
+  });
+
+  AxiosError.call(axiosError, error.message, code, config, request, response);
+
+  axiosError.name = error.name;
+
+  customProps && Object.assign(axiosError, customProps);
+
+  return axiosError;
+};
+
+module.exports = AxiosError;
+
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/core/InterceptorManager.js":
+/*!***********************************************************!*\
+  !*** ./node_modules/axios/lib/core/InterceptorManager.js ***!
+  \***********************************************************/
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+var utils = __webpack_require__(/*! ./../utils */ "./node_modules/axios/lib/utils.js");
+
+function InterceptorManager() {
+  this.handlers = [];
+}
+
+/**
+ * Add a new interceptor to the stack
+ *
+ * @param {Function} fulfilled The function to handle `then` for a `Promise`
+ * @param {Function} rejected The function to handle `reject` for a `Promise`
+ *
+ * @return {Number} An ID used to remove interceptor later
+ */
+InterceptorManager.prototype.use = function use(fulfilled, rejected, options) {
+  this.handlers.push({
+    fulfilled: fulfilled,
+    rejected: rejected,
+    synchronous: options ? options.synchronous : false,
+    runWhen: options ? options.runWhen : null
+  });
+  return this.handlers.length - 1;
+};
+
+/**
+ * Remove an interceptor from the stack
+ *
+ * @param {Number} id The ID that was returned by `use`
+ */
+InterceptorManager.prototype.eject = function eject(id) {
+  if (this.handlers[id]) {
+    this.handlers[id] = null;
+  }
+};
+
+/**
+ * Iterate over all the registered interceptors
+ *
+ * This method is particularly useful for skipping over any
+ * interceptors that may have become `null` calling `eject`.
+ *
+ * @param {Function} fn The function to call for each interceptor
+ */
+InterceptorManager.prototype.forEach = function forEach(fn) {
+  utils.forEach(this.handlers, function forEachHandler(h) {
+    if (h !== null) {
+      fn(h);
+    }
+  });
+};
+
+module.exports = InterceptorManager;
+
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/core/buildFullPath.js":
+/*!******************************************************!*\
+  !*** ./node_modules/axios/lib/core/buildFullPath.js ***!
+  \******************************************************/
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+var isAbsoluteURL = __webpack_require__(/*! ../helpers/isAbsoluteURL */ "./node_modules/axios/lib/helpers/isAbsoluteURL.js");
+var combineURLs = __webpack_require__(/*! ../helpers/combineURLs */ "./node_modules/axios/lib/helpers/combineURLs.js");
+
+/**
+ * Creates a new URL by combining the baseURL with the requestedURL,
+ * only when the requestedURL is not already an absolute URL.
+ * If the requestURL is absolute, this function returns the requestedURL untouched.
+ *
+ * @param {string} baseURL The base URL
+ * @param {string} requestedURL Absolute or relative URL to combine
+ * @returns {string} The combined full path
+ */
+module.exports = function buildFullPath(baseURL, requestedURL) {
+  if (baseURL && !isAbsoluteURL(requestedURL)) {
+    return combineURLs(baseURL, requestedURL);
+  }
+  return requestedURL;
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/core/dispatchRequest.js":
+/*!********************************************************!*\
+  !*** ./node_modules/axios/lib/core/dispatchRequest.js ***!
+  \********************************************************/
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+var utils = __webpack_require__(/*! ./../utils */ "./node_modules/axios/lib/utils.js");
+var transformData = __webpack_require__(/*! ./transformData */ "./node_modules/axios/lib/core/transformData.js");
+var isCancel = __webpack_require__(/*! ../cancel/isCancel */ "./node_modules/axios/lib/cancel/isCancel.js");
+var defaults = __webpack_require__(/*! ../defaults */ "./node_modules/axios/lib/defaults/index.js");
+var CanceledError = __webpack_require__(/*! ../cancel/CanceledError */ "./node_modules/axios/lib/cancel/CanceledError.js");
+
+/**
+ * Throws a `CanceledError` if cancellation has been requested.
+ */
+function throwIfCancellationRequested(config) {
+  if (config.cancelToken) {
+    config.cancelToken.throwIfRequested();
+  }
+
+  if (config.signal && config.signal.aborted) {
+    throw new CanceledError();
+  }
+}
+
+/**
+ * Dispatch a request to the server using the configured adapter.
+ *
+ * @param {object} config The config that is to be used for the request
+ * @returns {Promise} The Promise to be fulfilled
+ */
+module.exports = function dispatchRequest(config) {
+  throwIfCancellationRequested(config);
+
+  // Ensure headers exist
+  config.headers = config.headers || {};
+
+  // Transform request data
+  config.data = transformData.call(
+    config,
+    config.data,
+    config.headers,
+    config.transformRequest
+  );
+
+  // Flatten headers
+  config.headers = utils.merge(
+    config.headers.common || {},
+    config.headers[config.method] || {},
+    config.headers
+  );
+
+  utils.forEach(
+    ['delete', 'get', 'head', 'post', 'put', 'patch', 'common'],
+    function cleanHeaderConfig(method) {
+      delete config.headers[method];
+    }
+  );
+
+  var adapter = config.adapter || defaults.adapter;
+
+  return adapter(config).then(function onAdapterResolution(response) {
+    throwIfCancellationRequested(config);
+
+    // Transform response data
+    response.data = transformData.call(
+      config,
+      response.data,
+      response.headers,
+      config.transformResponse
+    );
+
+    return response;
+  }, function onAdapterRejection(reason) {
+    if (!isCancel(reason)) {
+      throwIfCancellationRequested(config);
+
+      // Transform response data
+      if (reason && reason.response) {
+        reason.response.data = transformData.call(
+          config,
+          reason.response.data,
+          reason.response.headers,
+          config.transformResponse
+        );
+      }
+    }
+
+    return Promise.reject(reason);
+  });
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/core/mergeConfig.js":
+/*!****************************************************!*\
+  !*** ./node_modules/axios/lib/core/mergeConfig.js ***!
+  \****************************************************/
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+var utils = __webpack_require__(/*! ../utils */ "./node_modules/axios/lib/utils.js");
+
+/**
+ * Config-specific merge-function which creates a new config-object
+ * by merging two configuration objects together.
+ *
+ * @param {Object} config1
+ * @param {Object} config2
+ * @returns {Object} New object resulting from merging config2 to config1
+ */
+module.exports = function mergeConfig(config1, config2) {
+  // eslint-disable-next-line no-param-reassign
+  config2 = config2 || {};
+  var config = {};
+
+  function getMergedValue(target, source) {
+    if (utils.isPlainObject(target) && utils.isPlainObject(source)) {
+      return utils.merge(target, source);
+    } else if (utils.isPlainObject(source)) {
+      return utils.merge({}, source);
+    } else if (utils.isArray(source)) {
+      return source.slice();
+    }
+    return source;
+  }
+
+  // eslint-disable-next-line consistent-return
+  function mergeDeepProperties(prop) {
+    if (!utils.isUndefined(config2[prop])) {
+      return getMergedValue(config1[prop], config2[prop]);
+    } else if (!utils.isUndefined(config1[prop])) {
+      return getMergedValue(undefined, config1[prop]);
+    }
+  }
+
+  // eslint-disable-next-line consistent-return
+  function valueFromConfig2(prop) {
+    if (!utils.isUndefined(config2[prop])) {
+      return getMergedValue(undefined, config2[prop]);
+    }
+  }
+
+  // eslint-disable-next-line consistent-return
+  function defaultToConfig2(prop) {
+    if (!utils.isUndefined(config2[prop])) {
+      return getMergedValue(undefined, config2[prop]);
+    } else if (!utils.isUndefined(config1[prop])) {
+      return getMergedValue(undefined, config1[prop]);
+    }
+  }
+
+  // eslint-disable-next-line consistent-return
+  function mergeDirectKeys(prop) {
+    if (prop in config2) {
+      return getMergedValue(config1[prop], config2[prop]);
+    } else if (prop in config1) {
+      return getMergedValue(undefined, config1[prop]);
+    }
+  }
+
+  var mergeMap = {
+    'url': valueFromConfig2,
+    'method': valueFromConfig2,
+    'data': valueFromConfig2,
+    'baseURL': defaultToConfig2,
+    'transformRequest': defaultToConfig2,
+    'transformResponse': defaultToConfig2,
+    'paramsSerializer': defaultToConfig2,
+    'timeout': defaultToConfig2,
+    'timeoutMessage': defaultToConfig2,
+    'withCredentials': defaultToConfig2,
+    'adapter': defaultToConfig2,
+    'responseType': defaultToConfig2,
+    'xsrfCookieName': defaultToConfig2,
+    'xsrfHeaderName': defaultToConfig2,
+    'onUploadProgress': defaultToConfig2,
+    'onDownloadProgress': defaultToConfig2,
+    'decompress': defaultToConfig2,
+    'maxContentLength': defaultToConfig2,
+    'maxBodyLength': defaultToConfig2,
+    'beforeRedirect': defaultToConfig2,
+    'transport': defaultToConfig2,
+    'httpAgent': defaultToConfig2,
+    'httpsAgent': defaultToConfig2,
+    'cancelToken': defaultToConfig2,
+    'socketPath': defaultToConfig2,
+    'responseEncoding': defaultToConfig2,
+    'validateStatus': mergeDirectKeys
+  };
+
+  utils.forEach(Object.keys(config1).concat(Object.keys(config2)), function computeConfigValue(prop) {
+    var merge = mergeMap[prop] || mergeDeepProperties;
+    var configValue = merge(prop);
+    (utils.isUndefined(configValue) && merge !== mergeDirectKeys) || (config[prop] = configValue);
+  });
+
+  return config;
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/core/settle.js":
+/*!***********************************************!*\
+  !*** ./node_modules/axios/lib/core/settle.js ***!
+  \***********************************************/
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+var AxiosError = __webpack_require__(/*! ./AxiosError */ "./node_modules/axios/lib/core/AxiosError.js");
+
+/**
+ * Resolve or reject a Promise based on response status.
+ *
+ * @param {Function} resolve A function that resolves the promise.
+ * @param {Function} reject A function that rejects the promise.
+ * @param {object} response The response.
+ */
+module.exports = function settle(resolve, reject, response) {
+  var validateStatus = response.config.validateStatus;
+  if (!response.status || !validateStatus || validateStatus(response.status)) {
+    resolve(response);
+  } else {
+    reject(new AxiosError(
+      'Request failed with status code ' + response.status,
+      [AxiosError.ERR_BAD_REQUEST, AxiosError.ERR_BAD_RESPONSE][Math.floor(response.status / 100) - 4],
+      response.config,
+      response.request,
+      response
+    ));
+  }
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/core/transformData.js":
+/*!******************************************************!*\
+  !*** ./node_modules/axios/lib/core/transformData.js ***!
+  \******************************************************/
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+var utils = __webpack_require__(/*! ./../utils */ "./node_modules/axios/lib/utils.js");
+var defaults = __webpack_require__(/*! ../defaults */ "./node_modules/axios/lib/defaults/index.js");
+
+/**
+ * Transform the data for a request or a response
+ *
+ * @param {Object|String} data The data to be transformed
+ * @param {Array} headers The headers for the request or response
+ * @param {Array|Function} fns A single function or Array of functions
+ * @returns {*} The resulting transformed data
+ */
+module.exports = function transformData(data, headers, fns) {
+  var context = this || defaults;
+  /*eslint no-param-reassign:0*/
+  utils.forEach(fns, function transform(fn) {
+    data = fn.call(context, data, headers);
+  });
+
+  return data;
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/defaults/index.js":
+/*!**************************************************!*\
+  !*** ./node_modules/axios/lib/defaults/index.js ***!
+  \**************************************************/
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+var utils = __webpack_require__(/*! ../utils */ "./node_modules/axios/lib/utils.js");
+var normalizeHeaderName = __webpack_require__(/*! ../helpers/normalizeHeaderName */ "./node_modules/axios/lib/helpers/normalizeHeaderName.js");
+var AxiosError = __webpack_require__(/*! ../core/AxiosError */ "./node_modules/axios/lib/core/AxiosError.js");
+var transitionalDefaults = __webpack_require__(/*! ./transitional */ "./node_modules/axios/lib/defaults/transitional.js");
+var toFormData = __webpack_require__(/*! ../helpers/toFormData */ "./node_modules/axios/lib/helpers/toFormData.js");
+
+var DEFAULT_CONTENT_TYPE = {
+  'Content-Type': 'application/x-www-form-urlencoded'
+};
+
+function setContentTypeIfUnset(headers, value) {
+  if (!utils.isUndefined(headers) && utils.isUndefined(headers['Content-Type'])) {
+    headers['Content-Type'] = value;
+  }
+}
+
+function getDefaultAdapter() {
+  var adapter;
+  if (typeof XMLHttpRequest !== 'undefined') {
+    // For browsers use XHR adapter
+    adapter = __webpack_require__(/*! ../adapters/xhr */ "./node_modules/axios/lib/adapters/xhr.js");
+  } else if (typeof process !== 'undefined' && Object.prototype.toString.call(process) === '[object process]') {
+    // For node use HTTP adapter
+    adapter = __webpack_require__(/*! ../adapters/http */ "./node_modules/axios/lib/adapters/xhr.js");
+  }
+  return adapter;
+}
+
+function stringifySafely(rawValue, parser, encoder) {
+  if (utils.isString(rawValue)) {
+    try {
+      (parser || JSON.parse)(rawValue);
+      return utils.trim(rawValue);
+    } catch (e) {
+      if (e.name !== 'SyntaxError') {
+        throw e;
+      }
+    }
+  }
+
+  return (encoder || JSON.stringify)(rawValue);
+}
+
+var defaults = {
+
+  transitional: transitionalDefaults,
+
+  adapter: getDefaultAdapter(),
+
+  transformRequest: [function transformRequest(data, headers) {
+    normalizeHeaderName(headers, 'Accept');
+    normalizeHeaderName(headers, 'Content-Type');
+
+    if (utils.isFormData(data) ||
+      utils.isArrayBuffer(data) ||
+      utils.isBuffer(data) ||
+      utils.isStream(data) ||
+      utils.isFile(data) ||
+      utils.isBlob(data)
+    ) {
+      return data;
+    }
+    if (utils.isArrayBufferView(data)) {
+      return data.buffer;
+    }
+    if (utils.isURLSearchParams(data)) {
+      setContentTypeIfUnset(headers, 'application/x-www-form-urlencoded;charset=utf-8');
+      return data.toString();
+    }
+
+    var isObjectPayload = utils.isObject(data);
+    var contentType = headers && headers['Content-Type'];
+
+    var isFileList;
+
+    if ((isFileList = utils.isFileList(data)) || (isObjectPayload && contentType === 'multipart/form-data')) {
+      var _FormData = this.env && this.env.FormData;
+      return toFormData(isFileList ? {'files[]': data} : data, _FormData && new _FormData());
+    } else if (isObjectPayload || contentType === 'application/json') {
+      setContentTypeIfUnset(headers, 'application/json');
+      return stringifySafely(data);
+    }
+
+    return data;
+  }],
+
+  transformResponse: [function transformResponse(data) {
+    var transitional = this.transitional || defaults.transitional;
+    var silentJSONParsing = transitional && transitional.silentJSONParsing;
+    var forcedJSONParsing = transitional && transitional.forcedJSONParsing;
+    var strictJSONParsing = !silentJSONParsing && this.responseType === 'json';
+
+    if (strictJSONParsing || (forcedJSONParsing && utils.isString(data) && data.length)) {
+      try {
+        return JSON.parse(data);
+      } catch (e) {
+        if (strictJSONParsing) {
+          if (e.name === 'SyntaxError') {
+            throw AxiosError.from(e, AxiosError.ERR_BAD_RESPONSE, this, null, this.response);
+          }
+          throw e;
+        }
+      }
+    }
+
+    return data;
+  }],
+
+  /**
+   * A timeout in milliseconds to abort a request. If set to 0 (default) a
+   * timeout is not created.
+   */
+  timeout: 0,
+
+  xsrfCookieName: 'XSRF-TOKEN',
+  xsrfHeaderName: 'X-XSRF-TOKEN',
+
+  maxContentLength: -1,
+  maxBodyLength: -1,
+
+  env: {
+    FormData: __webpack_require__(/*! ./env/FormData */ "./node_modules/axios/lib/helpers/null.js")
+  },
+
+  validateStatus: function validateStatus(status) {
+    return status >= 200 && status < 300;
+  },
+
+  headers: {
+    common: {
+      'Accept': 'application/json, text/plain, */*'
+    }
+  }
+};
+
+utils.forEach(['delete', 'get', 'head'], function forEachMethodNoData(method) {
+  defaults.headers[method] = {};
+});
+
+utils.forEach(['post', 'put', 'patch'], function forEachMethodWithData(method) {
+  defaults.headers[method] = utils.merge(DEFAULT_CONTENT_TYPE);
+});
+
+module.exports = defaults;
+
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/defaults/transitional.js":
+/*!*********************************************************!*\
+  !*** ./node_modules/axios/lib/defaults/transitional.js ***!
+  \*********************************************************/
+/***/ ((module) => {
+
+"use strict";
+
+
+module.exports = {
+  silentJSONParsing: true,
+  forcedJSONParsing: true,
+  clarifyTimeoutError: false
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/env/data.js":
+/*!********************************************!*\
+  !*** ./node_modules/axios/lib/env/data.js ***!
+  \********************************************/
+/***/ ((module) => {
+
+module.exports = {
+  "version": "0.27.2"
+};
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/helpers/bind.js":
+/*!************************************************!*\
+  !*** ./node_modules/axios/lib/helpers/bind.js ***!
+  \************************************************/
+/***/ ((module) => {
+
+"use strict";
+
+
+module.exports = function bind(fn, thisArg) {
+  return function wrap() {
+    var args = new Array(arguments.length);
+    for (var i = 0; i < args.length; i++) {
+      args[i] = arguments[i];
+    }
+    return fn.apply(thisArg, args);
+  };
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/helpers/buildURL.js":
+/*!****************************************************!*\
+  !*** ./node_modules/axios/lib/helpers/buildURL.js ***!
+  \****************************************************/
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+var utils = __webpack_require__(/*! ./../utils */ "./node_modules/axios/lib/utils.js");
+
+function encode(val) {
+  return encodeURIComponent(val).
+    replace(/%3A/gi, ':').
+    replace(/%24/g, '$').
+    replace(/%2C/gi, ',').
+    replace(/%20/g, '+').
+    replace(/%5B/gi, '[').
+    replace(/%5D/gi, ']');
+}
+
+/**
+ * Build a URL by appending params to the end
+ *
+ * @param {string} url The base of the url (e.g., http://www.google.com)
+ * @param {object} [params] The params to be appended
+ * @returns {string} The formatted url
+ */
+module.exports = function buildURL(url, params, paramsSerializer) {
+  /*eslint no-param-reassign:0*/
+  if (!params) {
+    return url;
+  }
+
+  var serializedParams;
+  if (paramsSerializer) {
+    serializedParams = paramsSerializer(params);
+  } else if (utils.isURLSearchParams(params)) {
+    serializedParams = params.toString();
+  } else {
+    var parts = [];
+
+    utils.forEach(params, function serialize(val, key) {
+      if (val === null || typeof val === 'undefined') {
+        return;
+      }
+
+      if (utils.isArray(val)) {
+        key = key + '[]';
+      } else {
+        val = [val];
+      }
+
+      utils.forEach(val, function parseValue(v) {
+        if (utils.isDate(v)) {
+          v = v.toISOString();
+        } else if (utils.isObject(v)) {
+          v = JSON.stringify(v);
+        }
+        parts.push(encode(key) + '=' + encode(v));
+      });
+    });
+
+    serializedParams = parts.join('&');
+  }
+
+  if (serializedParams) {
+    var hashmarkIndex = url.indexOf('#');
+    if (hashmarkIndex !== -1) {
+      url = url.slice(0, hashmarkIndex);
+    }
+
+    url += (url.indexOf('?') === -1 ? '?' : '&') + serializedParams;
+  }
+
+  return url;
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/helpers/combineURLs.js":
+/*!*******************************************************!*\
+  !*** ./node_modules/axios/lib/helpers/combineURLs.js ***!
+  \*******************************************************/
+/***/ ((module) => {
+
+"use strict";
+
+
+/**
+ * Creates a new URL by combining the specified URLs
+ *
+ * @param {string} baseURL The base URL
+ * @param {string} relativeURL The relative URL
+ * @returns {string} The combined URL
+ */
+module.exports = function combineURLs(baseURL, relativeURL) {
+  return relativeURL
+    ? baseURL.replace(/\/+$/, '') + '/' + relativeURL.replace(/^\/+/, '')
+    : baseURL;
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/helpers/cookies.js":
+/*!***************************************************!*\
+  !*** ./node_modules/axios/lib/helpers/cookies.js ***!
+  \***************************************************/
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+var utils = __webpack_require__(/*! ./../utils */ "./node_modules/axios/lib/utils.js");
+
+module.exports = (
+  utils.isStandardBrowserEnv() ?
+
+  // Standard browser envs support document.cookie
+    (function standardBrowserEnv() {
+      return {
+        write: function write(name, value, expires, path, domain, secure) {
+          var cookie = [];
+          cookie.push(name + '=' + encodeURIComponent(value));
+
+          if (utils.isNumber(expires)) {
+            cookie.push('expires=' + new Date(expires).toGMTString());
+          }
+
+          if (utils.isString(path)) {
+            cookie.push('path=' + path);
+          }
+
+          if (utils.isString(domain)) {
+            cookie.push('domain=' + domain);
+          }
+
+          if (secure === true) {
+            cookie.push('secure');
+          }
+
+          document.cookie = cookie.join('; ');
+        },
+
+        read: function read(name) {
+          var match = document.cookie.match(new RegExp('(^|;\\s*)(' + name + ')=([^;]*)'));
+          return (match ? decodeURIComponent(match[3]) : null);
+        },
+
+        remove: function remove(name) {
+          this.write(name, '', Date.now() - 86400000);
+        }
+      };
+    })() :
+
+  // Non standard browser env (web workers, react-native) lack needed support.
+    (function nonStandardBrowserEnv() {
+      return {
+        write: function write() {},
+        read: function read() { return null; },
+        remove: function remove() {}
+      };
+    })()
+);
+
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/helpers/isAbsoluteURL.js":
+/*!*********************************************************!*\
+  !*** ./node_modules/axios/lib/helpers/isAbsoluteURL.js ***!
+  \*********************************************************/
+/***/ ((module) => {
+
+"use strict";
+
+
+/**
+ * Determines whether the specified URL is absolute
+ *
+ * @param {string} url The URL to test
+ * @returns {boolean} True if the specified URL is absolute, otherwise false
+ */
+module.exports = function isAbsoluteURL(url) {
+  // A URL is considered absolute if it begins with "<scheme>://" or "//" (protocol-relative URL).
+  // RFC 3986 defines scheme name as a sequence of characters beginning with a letter and followed
+  // by any combination of letters, digits, plus, period, or hyphen.
+  return /^([a-z][a-z\d+\-.]*:)?\/\//i.test(url);
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/helpers/isAxiosError.js":
+/*!********************************************************!*\
+  !*** ./node_modules/axios/lib/helpers/isAxiosError.js ***!
+  \********************************************************/
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+var utils = __webpack_require__(/*! ./../utils */ "./node_modules/axios/lib/utils.js");
+
+/**
+ * Determines whether the payload is an error thrown by Axios
+ *
+ * @param {*} payload The value to test
+ * @returns {boolean} True if the payload is an error thrown by Axios, otherwise false
+ */
+module.exports = function isAxiosError(payload) {
+  return utils.isObject(payload) && (payload.isAxiosError === true);
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/helpers/isURLSameOrigin.js":
+/*!***********************************************************!*\
+  !*** ./node_modules/axios/lib/helpers/isURLSameOrigin.js ***!
+  \***********************************************************/
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+var utils = __webpack_require__(/*! ./../utils */ "./node_modules/axios/lib/utils.js");
+
+module.exports = (
+  utils.isStandardBrowserEnv() ?
+
+  // Standard browser envs have full support of the APIs needed to test
+  // whether the request URL is of the same origin as current location.
+    (function standardBrowserEnv() {
+      var msie = /(msie|trident)/i.test(navigator.userAgent);
+      var urlParsingNode = document.createElement('a');
+      var originURL;
+
+      /**
+    * Parse a URL to discover it's components
+    *
+    * @param {String} url The URL to be parsed
+    * @returns {Object}
+    */
+      function resolveURL(url) {
+        var href = url;
+
+        if (msie) {
+        // IE needs attribute set twice to normalize properties
+          urlParsingNode.setAttribute('href', href);
+          href = urlParsingNode.href;
+        }
+
+        urlParsingNode.setAttribute('href', href);
+
+        // urlParsingNode provides the UrlUtils interface - http://url.spec.whatwg.org/#urlutils
+        return {
+          href: urlParsingNode.href,
+          protocol: urlParsingNode.protocol ? urlParsingNode.protocol.replace(/:$/, '') : '',
+          host: urlParsingNode.host,
+          search: urlParsingNode.search ? urlParsingNode.search.replace(/^\?/, '') : '',
+          hash: urlParsingNode.hash ? urlParsingNode.hash.replace(/^#/, '') : '',
+          hostname: urlParsingNode.hostname,
+          port: urlParsingNode.port,
+          pathname: (urlParsingNode.pathname.charAt(0) === '/') ?
+            urlParsingNode.pathname :
+            '/' + urlParsingNode.pathname
+        };
+      }
+
+      originURL = resolveURL(window.location.href);
+
+      /**
+    * Determine if a URL shares the same origin as the current location
+    *
+    * @param {String} requestURL The URL to test
+    * @returns {boolean} True if URL shares the same origin, otherwise false
+    */
+      return function isURLSameOrigin(requestURL) {
+        var parsed = (utils.isString(requestURL)) ? resolveURL(requestURL) : requestURL;
+        return (parsed.protocol === originURL.protocol &&
+            parsed.host === originURL.host);
+      };
+    })() :
+
+  // Non standard browser envs (web workers, react-native) lack needed support.
+    (function nonStandardBrowserEnv() {
+      return function isURLSameOrigin() {
+        return true;
+      };
+    })()
+);
+
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/helpers/normalizeHeaderName.js":
+/*!***************************************************************!*\
+  !*** ./node_modules/axios/lib/helpers/normalizeHeaderName.js ***!
+  \***************************************************************/
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+var utils = __webpack_require__(/*! ../utils */ "./node_modules/axios/lib/utils.js");
+
+module.exports = function normalizeHeaderName(headers, normalizedName) {
+  utils.forEach(headers, function processHeader(value, name) {
+    if (name !== normalizedName && name.toUpperCase() === normalizedName.toUpperCase()) {
+      headers[normalizedName] = value;
+      delete headers[name];
+    }
+  });
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/helpers/null.js":
+/*!************************************************!*\
+  !*** ./node_modules/axios/lib/helpers/null.js ***!
+  \************************************************/
+/***/ ((module) => {
+
+// eslint-disable-next-line strict
+module.exports = null;
+
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/helpers/parseHeaders.js":
+/*!********************************************************!*\
+  !*** ./node_modules/axios/lib/helpers/parseHeaders.js ***!
+  \********************************************************/
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+var utils = __webpack_require__(/*! ./../utils */ "./node_modules/axios/lib/utils.js");
+
+// Headers whose duplicates are ignored by node
+// c.f. https://nodejs.org/api/http.html#http_message_headers
+var ignoreDuplicateOf = [
+  'age', 'authorization', 'content-length', 'content-type', 'etag',
+  'expires', 'from', 'host', 'if-modified-since', 'if-unmodified-since',
+  'last-modified', 'location', 'max-forwards', 'proxy-authorization',
+  'referer', 'retry-after', 'user-agent'
+];
+
+/**
+ * Parse headers into an object
+ *
+ * ```
+ * Date: Wed, 27 Aug 2014 08:58:49 GMT
+ * Content-Type: application/json
+ * Connection: keep-alive
+ * Transfer-Encoding: chunked
+ * ```
+ *
+ * @param {String} headers Headers needing to be parsed
+ * @returns {Object} Headers parsed into an object
+ */
+module.exports = function parseHeaders(headers) {
+  var parsed = {};
+  var key;
+  var val;
+  var i;
+
+  if (!headers) { return parsed; }
+
+  utils.forEach(headers.split('\n'), function parser(line) {
+    i = line.indexOf(':');
+    key = utils.trim(line.substr(0, i)).toLowerCase();
+    val = utils.trim(line.substr(i + 1));
+
+    if (key) {
+      if (parsed[key] && ignoreDuplicateOf.indexOf(key) >= 0) {
+        return;
+      }
+      if (key === 'set-cookie') {
+        parsed[key] = (parsed[key] ? parsed[key] : []).concat([val]);
+      } else {
+        parsed[key] = parsed[key] ? parsed[key] + ', ' + val : val;
+      }
+    }
+  });
+
+  return parsed;
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/helpers/parseProtocol.js":
+/*!*********************************************************!*\
+  !*** ./node_modules/axios/lib/helpers/parseProtocol.js ***!
+  \*********************************************************/
+/***/ ((module) => {
+
+"use strict";
+
+
+module.exports = function parseProtocol(url) {
+  var match = /^([-+\w]{1,25})(:?\/\/|:)/.exec(url);
+  return match && match[1] || '';
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/helpers/spread.js":
+/*!**************************************************!*\
+  !*** ./node_modules/axios/lib/helpers/spread.js ***!
+  \**************************************************/
+/***/ ((module) => {
+
+"use strict";
+
+
+/**
+ * Syntactic sugar for invoking a function and expanding an array for arguments.
+ *
+ * Common use case would be to use `Function.prototype.apply`.
+ *
+ *  ```js
+ *  function f(x, y, z) {}
+ *  var args = [1, 2, 3];
+ *  f.apply(null, args);
+ *  ```
+ *
+ * With `spread` this example can be re-written.
+ *
+ *  ```js
+ *  spread(function(x, y, z) {})([1, 2, 3]);
+ *  ```
+ *
+ * @param {Function} callback
+ * @returns {Function}
+ */
+module.exports = function spread(callback) {
+  return function wrap(arr) {
+    return callback.apply(null, arr);
+  };
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/helpers/toFormData.js":
+/*!******************************************************!*\
+  !*** ./node_modules/axios/lib/helpers/toFormData.js ***!
+  \******************************************************/
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+var utils = __webpack_require__(/*! ../utils */ "./node_modules/axios/lib/utils.js");
+
+/**
+ * Convert a data object to FormData
+ * @param {Object} obj
+ * @param {?Object} [formData]
+ * @returns {Object}
+ **/
+
+function toFormData(obj, formData) {
+  // eslint-disable-next-line no-param-reassign
+  formData = formData || new FormData();
+
+  var stack = [];
+
+  function convertValue(value) {
+    if (value === null) return '';
+
+    if (utils.isDate(value)) {
+      return value.toISOString();
+    }
+
+    if (utils.isArrayBuffer(value) || utils.isTypedArray(value)) {
+      return typeof Blob === 'function' ? new Blob([value]) : Buffer.from(value);
+    }
+
+    return value;
+  }
+
+  function build(data, parentKey) {
+    if (utils.isPlainObject(data) || utils.isArray(data)) {
+      if (stack.indexOf(data) !== -1) {
+        throw Error('Circular reference detected in ' + parentKey);
+      }
+
+      stack.push(data);
+
+      utils.forEach(data, function each(value, key) {
+        if (utils.isUndefined(value)) return;
+        var fullKey = parentKey ? parentKey + '.' + key : key;
+        var arr;
+
+        if (value && !parentKey && typeof value === 'object') {
+          if (utils.endsWith(key, '{}')) {
+            // eslint-disable-next-line no-param-reassign
+            value = JSON.stringify(value);
+          } else if (utils.endsWith(key, '[]') && (arr = utils.toArray(value))) {
+            // eslint-disable-next-line func-names
+            arr.forEach(function(el) {
+              !utils.isUndefined(el) && formData.append(fullKey, convertValue(el));
+            });
+            return;
+          }
+        }
+
+        build(value, fullKey);
+      });
+
+      stack.pop();
+    } else {
+      formData.append(parentKey, convertValue(data));
+    }
+  }
+
+  build(obj);
+
+  return formData;
+}
+
+module.exports = toFormData;
+
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/helpers/validator.js":
+/*!*****************************************************!*\
+  !*** ./node_modules/axios/lib/helpers/validator.js ***!
+  \*****************************************************/
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+var VERSION = (__webpack_require__(/*! ../env/data */ "./node_modules/axios/lib/env/data.js").version);
+var AxiosError = __webpack_require__(/*! ../core/AxiosError */ "./node_modules/axios/lib/core/AxiosError.js");
+
+var validators = {};
+
+// eslint-disable-next-line func-names
+['object', 'boolean', 'number', 'function', 'string', 'symbol'].forEach(function(type, i) {
+  validators[type] = function validator(thing) {
+    return typeof thing === type || 'a' + (i < 1 ? 'n ' : ' ') + type;
+  };
+});
+
+var deprecatedWarnings = {};
+
+/**
+ * Transitional option validator
+ * @param {function|boolean?} validator - set to false if the transitional option has been removed
+ * @param {string?} version - deprecated version / removed since version
+ * @param {string?} message - some message with additional info
+ * @returns {function}
+ */
+validators.transitional = function transitional(validator, version, message) {
+  function formatMessage(opt, desc) {
+    return '[Axios v' + VERSION + '] Transitional option \'' + opt + '\'' + desc + (message ? '. ' + message : '');
+  }
+
+  // eslint-disable-next-line func-names
+  return function(value, opt, opts) {
+    if (validator === false) {
+      throw new AxiosError(
+        formatMessage(opt, ' has been removed' + (version ? ' in ' + version : '')),
+        AxiosError.ERR_DEPRECATED
+      );
+    }
+
+    if (version && !deprecatedWarnings[opt]) {
+      deprecatedWarnings[opt] = true;
+      // eslint-disable-next-line no-console
+      console.warn(
+        formatMessage(
+          opt,
+          ' has been deprecated since v' + version + ' and will be removed in the near future'
+        )
+      );
+    }
+
+    return validator ? validator(value, opt, opts) : true;
+  };
+};
+
+/**
+ * Assert object's properties type
+ * @param {object} options
+ * @param {object} schema
+ * @param {boolean?} allowUnknown
+ */
+
+function assertOptions(options, schema, allowUnknown) {
+  if (typeof options !== 'object') {
+    throw new AxiosError('options must be an object', AxiosError.ERR_BAD_OPTION_VALUE);
+  }
+  var keys = Object.keys(options);
+  var i = keys.length;
+  while (i-- > 0) {
+    var opt = keys[i];
+    var validator = schema[opt];
+    if (validator) {
+      var value = options[opt];
+      var result = value === undefined || validator(value, opt, options);
+      if (result !== true) {
+        throw new AxiosError('option ' + opt + ' must be ' + result, AxiosError.ERR_BAD_OPTION_VALUE);
+      }
+      continue;
+    }
+    if (allowUnknown !== true) {
+      throw new AxiosError('Unknown option ' + opt, AxiosError.ERR_BAD_OPTION);
+    }
+  }
+}
+
+module.exports = {
+  assertOptions: assertOptions,
+  validators: validators
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/utils.js":
+/*!*****************************************!*\
+  !*** ./node_modules/axios/lib/utils.js ***!
+  \*****************************************/
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+var bind = __webpack_require__(/*! ./helpers/bind */ "./node_modules/axios/lib/helpers/bind.js");
+
+// utils is a library of generic helper functions non-specific to axios
+
+var toString = Object.prototype.toString;
+
+// eslint-disable-next-line func-names
+var kindOf = (function(cache) {
+  // eslint-disable-next-line func-names
+  return function(thing) {
+    var str = toString.call(thing);
+    return cache[str] || (cache[str] = str.slice(8, -1).toLowerCase());
+  };
+})(Object.create(null));
+
+function kindOfTest(type) {
+  type = type.toLowerCase();
+  return function isKindOf(thing) {
+    return kindOf(thing) === type;
+  };
+}
+
+/**
+ * Determine if a value is an Array
+ *
+ * @param {Object} val The value to test
+ * @returns {boolean} True if value is an Array, otherwise false
+ */
+function isArray(val) {
+  return Array.isArray(val);
+}
+
+/**
+ * Determine if a value is undefined
+ *
+ * @param {Object} val The value to test
+ * @returns {boolean} True if the value is undefined, otherwise false
+ */
+function isUndefined(val) {
+  return typeof val === 'undefined';
+}
+
+/**
+ * Determine if a value is a Buffer
+ *
+ * @param {Object} val The value to test
+ * @returns {boolean} True if value is a Buffer, otherwise false
+ */
+function isBuffer(val) {
+  return val !== null && !isUndefined(val) && val.constructor !== null && !isUndefined(val.constructor)
+    && typeof val.constructor.isBuffer === 'function' && val.constructor.isBuffer(val);
+}
+
+/**
+ * Determine if a value is an ArrayBuffer
+ *
+ * @function
+ * @param {Object} val The value to test
+ * @returns {boolean} True if value is an ArrayBuffer, otherwise false
+ */
+var isArrayBuffer = kindOfTest('ArrayBuffer');
+
+
+/**
+ * Determine if a value is a view on an ArrayBuffer
+ *
+ * @param {Object} val The value to test
+ * @returns {boolean} True if value is a view on an ArrayBuffer, otherwise false
+ */
+function isArrayBufferView(val) {
+  var result;
+  if ((typeof ArrayBuffer !== 'undefined') && (ArrayBuffer.isView)) {
+    result = ArrayBuffer.isView(val);
+  } else {
+    result = (val) && (val.buffer) && (isArrayBuffer(val.buffer));
+  }
+  return result;
+}
+
+/**
+ * Determine if a value is a String
+ *
+ * @param {Object} val The value to test
+ * @returns {boolean} True if value is a String, otherwise false
+ */
+function isString(val) {
+  return typeof val === 'string';
+}
+
+/**
+ * Determine if a value is a Number
+ *
+ * @param {Object} val The value to test
+ * @returns {boolean} True if value is a Number, otherwise false
+ */
+function isNumber(val) {
+  return typeof val === 'number';
+}
+
+/**
+ * Determine if a value is an Object
+ *
+ * @param {Object} val The value to test
+ * @returns {boolean} True if value is an Object, otherwise false
+ */
+function isObject(val) {
+  return val !== null && typeof val === 'object';
+}
+
+/**
+ * Determine if a value is a plain Object
+ *
+ * @param {Object} val The value to test
+ * @return {boolean} True if value is a plain Object, otherwise false
+ */
+function isPlainObject(val) {
+  if (kindOf(val) !== 'object') {
+    return false;
+  }
+
+  var prototype = Object.getPrototypeOf(val);
+  return prototype === null || prototype === Object.prototype;
+}
+
+/**
+ * Determine if a value is a Date
+ *
+ * @function
+ * @param {Object} val The value to test
+ * @returns {boolean} True if value is a Date, otherwise false
+ */
+var isDate = kindOfTest('Date');
+
+/**
+ * Determine if a value is a File
+ *
+ * @function
+ * @param {Object} val The value to test
+ * @returns {boolean} True if value is a File, otherwise false
+ */
+var isFile = kindOfTest('File');
+
+/**
+ * Determine if a value is a Blob
+ *
+ * @function
+ * @param {Object} val The value to test
+ * @returns {boolean} True if value is a Blob, otherwise false
+ */
+var isBlob = kindOfTest('Blob');
+
+/**
+ * Determine if a value is a FileList
+ *
+ * @function
+ * @param {Object} val The value to test
+ * @returns {boolean} True if value is a File, otherwise false
+ */
+var isFileList = kindOfTest('FileList');
+
+/**
+ * Determine if a value is a Function
+ *
+ * @param {Object} val The value to test
+ * @returns {boolean} True if value is a Function, otherwise false
+ */
+function isFunction(val) {
+  return toString.call(val) === '[object Function]';
+}
+
+/**
+ * Determine if a value is a Stream
+ *
+ * @param {Object} val The value to test
+ * @returns {boolean} True if value is a Stream, otherwise false
+ */
+function isStream(val) {
+  return isObject(val) && isFunction(val.pipe);
+}
+
+/**
+ * Determine if a value is a FormData
+ *
+ * @param {Object} thing The value to test
+ * @returns {boolean} True if value is an FormData, otherwise false
+ */
+function isFormData(thing) {
+  var pattern = '[object FormData]';
+  return thing && (
+    (typeof FormData === 'function' && thing instanceof FormData) ||
+    toString.call(thing) === pattern ||
+    (isFunction(thing.toString) && thing.toString() === pattern)
+  );
+}
+
+/**
+ * Determine if a value is a URLSearchParams object
+ * @function
+ * @param {Object} val The value to test
+ * @returns {boolean} True if value is a URLSearchParams object, otherwise false
+ */
+var isURLSearchParams = kindOfTest('URLSearchParams');
+
+/**
+ * Trim excess whitespace off the beginning and end of a string
+ *
+ * @param {String} str The String to trim
+ * @returns {String} The String freed of excess whitespace
+ */
+function trim(str) {
+  return str.trim ? str.trim() : str.replace(/^\s+|\s+$/g, '');
+}
+
+/**
+ * Determine if we're running in a standard browser environment
+ *
+ * This allows axios to run in a web worker, and react-native.
+ * Both environments support XMLHttpRequest, but not fully standard globals.
+ *
+ * web workers:
+ *  typeof window -> undefined
+ *  typeof document -> undefined
+ *
+ * react-native:
+ *  navigator.product -> 'ReactNative'
+ * nativescript
+ *  navigator.product -> 'NativeScript' or 'NS'
+ */
+function isStandardBrowserEnv() {
+  if (typeof navigator !== 'undefined' && (navigator.product === 'ReactNative' ||
+                                           navigator.product === 'NativeScript' ||
+                                           navigator.product === 'NS')) {
+    return false;
+  }
+  return (
+    typeof window !== 'undefined' &&
+    typeof document !== 'undefined'
+  );
+}
+
+/**
+ * Iterate over an Array or an Object invoking a function for each item.
+ *
+ * If `obj` is an Array callback will be called passing
+ * the value, index, and complete array for each item.
+ *
+ * If 'obj' is an Object callback will be called passing
+ * the value, key, and complete object for each property.
+ *
+ * @param {Object|Array} obj The object to iterate
+ * @param {Function} fn The callback to invoke for each item
+ */
+function forEach(obj, fn) {
+  // Don't bother if no value provided
+  if (obj === null || typeof obj === 'undefined') {
+    return;
+  }
+
+  // Force an array if not already something iterable
+  if (typeof obj !== 'object') {
+    /*eslint no-param-reassign:0*/
+    obj = [obj];
+  }
+
+  if (isArray(obj)) {
+    // Iterate over array values
+    for (var i = 0, l = obj.length; i < l; i++) {
+      fn.call(null, obj[i], i, obj);
+    }
+  } else {
+    // Iterate over object keys
+    for (var key in obj) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+        fn.call(null, obj[key], key, obj);
+      }
+    }
+  }
+}
+
+/**
+ * Accepts varargs expecting each argument to be an object, then
+ * immutably merges the properties of each object and returns result.
+ *
+ * When multiple objects contain the same key the later object in
+ * the arguments list will take precedence.
+ *
+ * Example:
+ *
+ * ```js
+ * var result = merge({foo: 123}, {foo: 456});
+ * console.log(result.foo); // outputs 456
+ * ```
+ *
+ * @param {Object} obj1 Object to merge
+ * @returns {Object} Result of all merge properties
+ */
+function merge(/* obj1, obj2, obj3, ... */) {
+  var result = {};
+  function assignValue(val, key) {
+    if (isPlainObject(result[key]) && isPlainObject(val)) {
+      result[key] = merge(result[key], val);
+    } else if (isPlainObject(val)) {
+      result[key] = merge({}, val);
+    } else if (isArray(val)) {
+      result[key] = val.slice();
+    } else {
+      result[key] = val;
+    }
+  }
+
+  for (var i = 0, l = arguments.length; i < l; i++) {
+    forEach(arguments[i], assignValue);
+  }
+  return result;
+}
+
+/**
+ * Extends object a by mutably adding to it the properties of object b.
+ *
+ * @param {Object} a The object to be extended
+ * @param {Object} b The object to copy properties from
+ * @param {Object} thisArg The object to bind function to
+ * @return {Object} The resulting value of object a
+ */
+function extend(a, b, thisArg) {
+  forEach(b, function assignValue(val, key) {
+    if (thisArg && typeof val === 'function') {
+      a[key] = bind(val, thisArg);
+    } else {
+      a[key] = val;
+    }
+  });
+  return a;
+}
+
+/**
+ * Remove byte order marker. This catches EF BB BF (the UTF-8 BOM)
+ *
+ * @param {string} content with BOM
+ * @return {string} content value without BOM
+ */
+function stripBOM(content) {
+  if (content.charCodeAt(0) === 0xFEFF) {
+    content = content.slice(1);
+  }
+  return content;
+}
+
+/**
+ * Inherit the prototype methods from one constructor into another
+ * @param {function} constructor
+ * @param {function} superConstructor
+ * @param {object} [props]
+ * @param {object} [descriptors]
+ */
+
+function inherits(constructor, superConstructor, props, descriptors) {
+  constructor.prototype = Object.create(superConstructor.prototype, descriptors);
+  constructor.prototype.constructor = constructor;
+  props && Object.assign(constructor.prototype, props);
+}
+
+/**
+ * Resolve object with deep prototype chain to a flat object
+ * @param {Object} sourceObj source object
+ * @param {Object} [destObj]
+ * @param {Function} [filter]
+ * @returns {Object}
+ */
+
+function toFlatObject(sourceObj, destObj, filter) {
+  var props;
+  var i;
+  var prop;
+  var merged = {};
+
+  destObj = destObj || {};
+
+  do {
+    props = Object.getOwnPropertyNames(sourceObj);
+    i = props.length;
+    while (i-- > 0) {
+      prop = props[i];
+      if (!merged[prop]) {
+        destObj[prop] = sourceObj[prop];
+        merged[prop] = true;
+      }
+    }
+    sourceObj = Object.getPrototypeOf(sourceObj);
+  } while (sourceObj && (!filter || filter(sourceObj, destObj)) && sourceObj !== Object.prototype);
+
+  return destObj;
+}
+
+/*
+ * determines whether a string ends with the characters of a specified string
+ * @param {String} str
+ * @param {String} searchString
+ * @param {Number} [position= 0]
+ * @returns {boolean}
+ */
+function endsWith(str, searchString, position) {
+  str = String(str);
+  if (position === undefined || position > str.length) {
+    position = str.length;
+  }
+  position -= searchString.length;
+  var lastIndex = str.indexOf(searchString, position);
+  return lastIndex !== -1 && lastIndex === position;
+}
+
+
+/**
+ * Returns new array from array like object
+ * @param {*} [thing]
+ * @returns {Array}
+ */
+function toArray(thing) {
+  if (!thing) return null;
+  var i = thing.length;
+  if (isUndefined(i)) return null;
+  var arr = new Array(i);
+  while (i-- > 0) {
+    arr[i] = thing[i];
+  }
+  return arr;
+}
+
+// eslint-disable-next-line func-names
+var isTypedArray = (function(TypedArray) {
+  // eslint-disable-next-line func-names
+  return function(thing) {
+    return TypedArray && thing instanceof TypedArray;
+  };
+})(typeof Uint8Array !== 'undefined' && Object.getPrototypeOf(Uint8Array));
+
+module.exports = {
+  isArray: isArray,
+  isArrayBuffer: isArrayBuffer,
+  isBuffer: isBuffer,
+  isFormData: isFormData,
+  isArrayBufferView: isArrayBufferView,
+  isString: isString,
+  isNumber: isNumber,
+  isObject: isObject,
+  isPlainObject: isPlainObject,
+  isUndefined: isUndefined,
+  isDate: isDate,
+  isFile: isFile,
+  isBlob: isBlob,
+  isFunction: isFunction,
+  isStream: isStream,
+  isURLSearchParams: isURLSearchParams,
+  isStandardBrowserEnv: isStandardBrowserEnv,
+  forEach: forEach,
+  merge: merge,
+  extend: extend,
+  trim: trim,
+  stripBOM: stripBOM,
+  inherits: inherits,
+  toFlatObject: toFlatObject,
+  kindOf: kindOf,
+  kindOfTest: kindOfTest,
+  endsWith: endsWith,
+  toArray: toArray,
+  isTypedArray: isTypedArray,
+  isFileList: isFileList
+};
+
+
+/***/ }),
+
 /***/ "./node_modules/backo2/index.js":
 /*!**************************************!*\
   !*** ./node_modules/backo2/index.js ***!
@@ -1235,10 +3696,10 @@ function queryKey(uri, query) {
 
 /***/ }),
 
-/***/ "./src/Chat.ts":
-/*!*********************!*\
-  !*** ./src/Chat.ts ***!
-  \*********************/
+/***/ "./src/ChattyChat.ts":
+/*!***************************!*\
+  !*** ./src/ChattyChat.ts ***!
+  \***************************/
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -1254,238 +3715,203 @@ var __assign = (this && this.__assign) || function () {
     };
     return __assign.apply(this, arguments);
 };
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.Chat = void 0;
+exports.ChattyChat = void 0;
 var socket_io_client_1 = __importDefault(__webpack_require__(/*! socket.io-client */ "./node_modules/socket.io-client/build/cjs/index.js"));
-var _1 = __importStar(__webpack_require__(/*! . */ "./src/index.ts"));
+var _1 = __importDefault(__webpack_require__(/*! . */ "./src/index.ts"));
 var Types_1 = __webpack_require__(/*! ./Types */ "./src/Types.ts");
 var dev =  true ? 'dev' : 0;
-var Chat = /** @class */ (function () {
-    function Chat() {
-        this.socket = null;
-        this.chatlist = null;
-        this.id = null;
-        this.connectHandler = null;
-        this.sendMessageHandler = null;
-        this.fetchMessagesHandler = null;
-        this.newMessageHandler = null;
-        this.updateMessagesHandler = null;
-        this.refreshChatHandler = null;
+var ChattyChat = /** @class */ (function () {
+    function ChattyChat(payload) {
+        this.chattyList = payload.chattyList;
+        this.onChatConnect = payload.onChatConnect;
+        this.onChatRefresh = payload.onChatRefresh;
+        this.onMessageSend = payload.onMessageSend;
+        this.onMessagesFetch = payload.onMessagesFetch;
+        this.onMessageReceive = payload.onMessageReceive;
+        this.onMessagesUpdate = payload.onMessagesUpdate;
     }
-    Chat.prototype.onConnectHandler = function (handler) {
-        this.connectHandler = handler;
-    };
-    Chat.prototype.onSendMessageHandler = function (handler) {
-        this.sendMessageHandler = handler;
-    };
-    Chat.prototype.onFetchMessagesHandler = function (handler) {
-        this.fetchMessagesHandler = handler;
-    };
-    Chat.prototype.onNewMessageHandler = function (handler) {
-        this.newMessageHandler = handler;
-    };
-    Chat.prototype.onUpdateMessagesHandler = function (handler) {
-        this.updateMessagesHandler = handler;
-    };
-    Chat.prototype.onRefreshChatHandler = function (handler) {
-        this.refreshChatHandler = handler;
-    };
-    Chat.prototype.connect = function (options, chatlist) {
-        if (!_1.default.app || !_1.default.member || !_1.default.member.id) {
-            throw new _1.ChattyException('E2001');
-        }
-        if (!options.at && !options.with) {
-            throw new _1.ChattyException('E4007');
-        }
-        if (options.with) {
-            if (typeof options.with === 'string') {
-                options.with = [options.with];
+    /**
+     *
+     * @param payload
+     *
+     */
+    ChattyChat.prototype.connect = function (payload) {
+        var _a, _b, _c, _d;
+        if (payload.with) {
+            if (typeof payload.with === 'string') {
+                payload.with = [payload.with];
             }
-            options.with = options.with.filter(function (MemberId) { return MemberId && MemberId !== 'undefined' && MemberId !== 'null'; });
-            options.with.push(_1.default.member.id);
+            payload.with = payload.with.filter(function (MemberId) { return MemberId && MemberId !== 'undefined' && MemberId !== 'null'; });
+            payload.with.push((_a = _1.default.member) === null || _a === void 0 ? void 0 : _a.id);
             // Remove duplicated elements
-            options.with = options.with.filter(function (value, index, self) { return self.indexOf(value) === index; });
-            if (options.with.length < 2) {
-                throw new _1.ChattyException('E4008');
+            payload.with = payload.with.filter(function (value, index, self) { return self.indexOf(value) === index; });
+            if (payload.with.length < 2) {
+                console.warn(':: ChattyChat connect with less than 2 members');
+                return;
             }
-            if (options.distinctKey === undefined) {
-                options.distinctKey = _1.default.generateDistinctKey(options.with);
+            if (payload.distinctKey === undefined) {
+                payload.distinctKey = _1.default.generateDistinctKey(payload.with);
             }
         }
         var url =  false ? 0 : "wss://".concat(dev, "socket.chatty-cloud.com");
         // option checker
-        Object.keys(options).forEach(function (key) { return !options[key] && delete options[key]; });
-        this.socket = (0, socket_io_client_1.default)("".concat(url, "/chat.").concat(_1.default.app.name), {
+        Object.keys(payload).forEach(function (key) { return !payload[key] && delete payload[key]; });
+        this.socket = (0, socket_io_client_1.default)("".concat(url, "/chat.").concat((_b = _1.default.app) === null || _b === void 0 ? void 0 : _b.name), {
             transports: ["polling", "websocket"],
             query: {
-                MemberId: _1.default.member.id,
-                options: JSON.stringify(options)
+                MemberId: (_c = _1.default.member) === null || _c === void 0 ? void 0 : _c.id,
+                AppId: (_d = _1.default.app) === null || _d === void 0 ? void 0 : _d.id,
+                at: payload.at,
+                with: payload.with,
+                distinctKey: payload.distinctKey,
+                private: payload.private,
+                name: payload.name,
+                image: payload.image,
+                data: payload.data && JSON.stringify(payload.data),
+                group: payload.group
             },
             auth: {
-                token: _1.default.apiKey
+                apikey: _1.default.apiKey
             },
             forceNew: true,
             // withCredentials: true, // cors "*" 일때는 이값을 설정하면안된다.
         });
-        if (chatlist) {
-            this.chatlist = chatlist;
-        }
         this.addListener();
     };
-    Chat.prototype.disconnect = function () {
-        if (!this.socket) {
-            throw new _1.ChattyException('E4004');
-        }
-        this.socket.disconnect();
+    ChattyChat.prototype.disconnect = function () {
+        var _a;
+        (_a = this.socket) === null || _a === void 0 ? void 0 : _a.disconnect();
         this.removeListener();
-        this.socket = null;
-        console.debug('::: Chatty DISCONNECT_DONE Chat');
+        console.debug(':: ChattyChat disconnected');
     };
-    Chat.prototype.fetchMessages = function (refresh) {
-        if (!this.socket) {
-            throw new _1.ChattyException('E4004');
-        }
-        this.socket.emit(Types_1.ChattyEvent.FETCH_MESSAGES, { refresh: refresh });
+    ChattyChat.prototype.fetchMessages = function (refresh) {
+        var _a;
+        (_a = this.socket) === null || _a === void 0 ? void 0 : _a.emit(Types_1.ChattyEvent.FETCH_MESSAGES, { refresh: refresh });
     };
-    Chat.prototype.sendMessage = function (data) {
-        if (!this.socket) {
-            throw new _1.ChattyException('E4004');
-        }
-        this.socket.emit(Types_1.ChattyEvent.SEND_MESSAGE, __assign(__assign({}, data), { retry: 5 }));
+    ChattyChat.prototype.sendMessage = function (data) {
+        var _a;
+        (_a = this.socket) === null || _a === void 0 ? void 0 : _a.emit(Types_1.ChattyEvent.SEND_MESSAGE, __assign(__assign({}, data), { retry: 5 }));
     };
-    Chat.prototype.refreshChat = function (ChatId) {
-        if (!this.socket) {
-            throw new _1.ChattyException('E4004');
-        }
+    ChattyChat.prototype.refreshChat = function (ChatId) {
+        var _a;
         // chat 화면의 정보 및 참여멤버정보등이 바뀔때 호출이되어야 함
-        this.socket.emit(Types_1.ChattyEvent.REFRESH_CHAT, ChatId);
+        (_a = this.socket) === null || _a === void 0 ? void 0 : _a.emit(Types_1.ChattyEvent.REFRESH_CHAT, { ChatId: ChatId });
     };
-    Chat.prototype.markAsRead = function () {
-        if (!this.socket) {
-            throw new _1.ChattyException('E4004');
+    ChattyChat.prototype.markAsRead = function () {
+        var _a;
+        (_a = this.socket) === null || _a === void 0 ? void 0 : _a.emit(Types_1.ChattyEvent.MARK_AS_READ);
+    };
+    ChattyChat.prototype.sendTextMessage = function (text) {
+        var _a;
+        var message = {
+            id: 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) { var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8); return v.toString(16); }),
+            createdAt: new Date(),
+            text: text,
+            type: Types_1.MessageTypeEnum.TEXT,
+            by: Types_1.MessageByEnum.USER,
+            SenderId: (_a = _1.default.member) === null || _a === void 0 ? void 0 : _a.id
+        };
+        this.sendMessage(message);
+        // return temporary message object before inserting to database
+        return message;
+    };
+    ChattyChat.prototype.sendFileMessage = function (files) {
+        var _this = this;
+        var _a;
+        if (!files) {
+            console.warn(':: ChattyChat sendFileMessage function param error: files are undefined');
+            return;
         }
-        this.socket.emit(Types_1.ChattyEvent.MARK_AS_READ);
+        if (files.length > 4) {
+            console.warn(':: ChattyChat sendFileMessage function param error: files length can not exceed 4');
+            return;
+        }
+        var message = {
+            id: 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) { var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8); return v.toString(16); }),
+            createdAt: new Date(),
+            files: files,
+            text: 'File Message',
+            type: Types_1.MessageTypeEnum.FILE,
+            by: Types_1.MessageByEnum.USER,
+            SenderId: (_a = _1.default.member) === null || _a === void 0 ? void 0 : _a.id
+        };
+        _1.default.uploadFiles(files)
+            .then(function (files) {
+            console.info(':: ChattyChat uploadFiles success', files);
+            _this.sendMessage(__assign(__assign({}, message), { files: files }));
+        })
+            .catch(function (err) {
+            console.warn(':: ChattyChat uploadFiles error', err.message);
+        });
+        // return temporary message object with SenderId before inserting to database
+        return message;
     };
-    Chat.prototype.addListener = function () {
+    ChattyChat.prototype.addListener = function () {
         var _this = this;
         if (!this.socket) {
-            throw new _1.ChattyException('E4004');
+            console.warn(':: ChattyChat socket is not connected');
+            return;
         }
-        this.socket.on(Types_1.ChattyEvent.CONNECT_DONE, function (chat) {
-            if (!_this.connectHandler) {
-                throw new _1.ChattyException('E4006', 'connectHandler');
-            }
-            console.debug("::: Chatty CONNECT_DONE", chat);
-            _this.id = chat.id; // 연결된 ChatId를 Chat instance에 저장
-            _this.connectHandler(chat, null);
+        this.socket.on(Types_1.ChattyEvent.CONNECT_DONE, function (data) {
+            console.debug(":: ChattyChat CONNECT_DONE", data);
+            // this.id = data.id; // 연결된 ChatId를 Chat instance에 저장 > 필요한 경우 다시 enable
+            _this.onChatConnect && _this.onChatConnect(data);
         });
-        this.socket.on(Types_1.ChattyEvent.CONNECT_FAIL, function (err) {
-            if (!_this.connectHandler) {
-                throw new _1.ChattyException('E4006', 'connectHandler');
-            }
-            var errorMessage = { message: 'Please check your connect payload. especially if you use "with" param, check peer member id exist or not' };
-            console.warn('::: Chatty CONNECT_FAIL', errorMessage);
-            _this.connectHandler(null, errorMessage);
-        });
-        this.socket.on(Types_1.ChattyEvent.CONNECT_ERROR, function (err) {
-            // server connect_error event
-            // 1. check server running
-            if (!_this.connectHandler) {
-                throw new _1.ChattyException('E4006', 'connectHandler');
-            }
-            console.warn('::: Chatty CONNECT_ERROR', err);
-            _this.connectHandler(null, err);
+        this.socket.on(Types_1.ChattyEvent.CONNECT_FAIL, function (data) {
+            console.warn(":: ChattyChat CONNECT_FAIL error", data === null || data === void 0 ? void 0 : data.error.message);
+            _this.onChatConnect && _this.onChatConnect(data);
         });
         this.socket.on(Types_1.ChattyEvent.FETCH_MESSAGES_DONE, function (data) {
-            if (!_this.fetchMessagesHandler) {
-                throw new _1.ChattyException('E4006', 'fetchMessagesHandler');
-            }
-            console.debug('::: Chatty FETCH_MESSAGES_DONE', data);
-            _this.fetchMessagesHandler(data, null);
+            console.debug(':: ChattyChat FETCH_MESSAGES_DONE', data);
+            _this.onMessagesFetch && _this.onMessagesFetch(data);
             _this.markAsRead();
         });
-        this.socket.on(Types_1.ChattyEvent.FETCH_MESSAGES_FAIL, function (err) {
-            if (!_this.fetchMessagesHandler) {
-                throw new _1.ChattyException('E4006', 'fetchMessagesHandler');
-            }
-            console.warn('::: Chatty FETCH_MESSAGES_FAIL', err);
-            _this.fetchMessagesHandler(null, err);
+        this.socket.on(Types_1.ChattyEvent.FETCH_MESSAGES_FAIL, function (data) {
+            console.warn(":: ChattyChat FETCH_MESSAGES_FAIL error", data === null || data === void 0 ? void 0 : data.error.message);
+            _this.onMessagesFetch && _this.onMessagesFetch(data);
         });
-        this.socket.on(Types_1.ChattyEvent.SEND_MESSAGE_DONE, function (message) {
+        this.socket.on(Types_1.ChattyEvent.SEND_MESSAGE_DONE, function (data) {
             var _a;
-            if (!_this.sendMessageHandler) {
-                throw new _1.ChattyException('E4006', 'sendMessageHandler');
-            }
-            console.debug('::: Chatty SEND_MESSAGE_DONE', message);
-            _this.sendMessageHandler(message, null);
+            console.debug(':: ChattyChat SEND_MESSAGE_DONE', data);
+            _this.onMessageSend && _this.onMessageSend(data);
             // 내가 메시지를 보낸게 성공하면 항상 나의 ChatList를 업데이트해야한다.
-            if ((_a = _this.chatlist) === null || _a === void 0 ? void 0 : _a.socket) {
-                _this.chatlist.refreshChatList(message.ChatId);
+            if ((_a = _this.chattyList) === null || _a === void 0 ? void 0 : _a.socket) {
+                _this.chattyList.updateChatList(data);
             }
         });
-        this.socket.on(Types_1.ChattyEvent.SEND_MESSAGE_FAIL, function (err) {
-            if (!_this.sendMessageHandler) {
-                throw new _1.ChattyException('E4006', 'sendMessageHandler');
-            }
-            console.warn('::: Chatty SEND_MESSAGE_FAIL', err);
-            _this.sendMessageHandler(null, err);
+        this.socket.on(Types_1.ChattyEvent.SEND_MESSAGE_FAIL, function (data) {
+            console.warn(":: ChattyChat SEND_MESSAGE_FAIL error", data === null || data === void 0 ? void 0 : data.error.message);
+            _this.onMessageSend && _this.onMessageSend(data);
         });
         this.socket.on(Types_1.ChattyEvent.SEND_MESSAGE_RETRY, function (data) {
-            if (!_this.socket) {
-                throw new _1.ChattyException('E4004');
-            }
-            console.debug('::: Chatty SEND_MESSAGE_RETRY', data);
-            _this.socket.emit(Types_1.ChattyEvent.SEND_MESSAGE, data);
+            var _a;
+            console.debug(':: ChattyChat SEND_MESSAGE_RETRY', data);
+            (_a = _this.socket) === null || _a === void 0 ? void 0 : _a.emit(Types_1.ChattyEvent.SEND_MESSAGE, data);
         });
-        this.socket.on(Types_1.ChattyEvent.NEW_MESSAGE, function (message) {
-            if (!_this.newMessageHandler) {
-                throw new _1.ChattyException('E4006', 'newMessageHandler');
-            }
-            console.debug('::: Chatty NEW_MESSAGE', message);
-            _this.newMessageHandler(message, null);
+        this.socket.on(Types_1.ChattyEvent.RECEIVE_MESSAGE, function (data) {
+            console.debug(':: ChattyChat NEW_MESSAGE', data);
+            _this.onMessageReceive && _this.onMessageReceive(data);
             _this.markAsRead();
         });
         this.socket.on(Types_1.ChattyEvent.MARK_AS_READ_DONE, function (data) {
             var _a;
-            console.debug('::: Chatty MARK_AS_READ_DONE');
+            console.debug(':: ChattyChat MARK_AS_READ_DONE', data);
             // ChatList로부터 왔다면 ChatList를 업데이트해야한다.
-            if ((_a = _this.chatlist) === null || _a === void 0 ? void 0 : _a.socket) {
-                _this.chatlist.refreshChatList(data.ChatId);
+            if ((_a = _this.chattyList) === null || _a === void 0 ? void 0 : _a.socket) {
+                _this.chattyList.updateChatList(data);
             }
         });
-        this.socket.on(Types_1.ChattyEvent.MARK_AS_READ_FAIL, function (err) {
-            console.warn('::: Chatty MARK_AS_READ_FAIL', err);
+        this.socket.on(Types_1.ChattyEvent.MARK_AS_READ_FAIL, function (data) {
+            console.warn(':: ChattyChat MARK_AS_READ_FAIL', data === null || data === void 0 ? void 0 : data.error.message);
         });
         this.socket.on(Types_1.ChattyEvent.MARK_AS_READ_BYPASS, function () {
             // MARK_AS_READ_DONE의 응답으로  data가 MARK_AS_READ_BYPASS 인경우가 있다. 
             // member 가 SUPER인경우에 해당되며 MARK_AS_READ 요청에대해 서버가 bypass로 동작한다
-            console.debug('::: Chatty MARK_AS_READ_BYPASS');
+            console.debug(':: ChattyChat MARK_AS_READ_BYPASS');
         });
         /**
          * UPDATE_MESSAGES 가 발생하는 경우
@@ -1494,31 +3920,23 @@ var Chat = /** @class */ (function () {
          * 1. 내가 Send Message한후 즉 NEW_MESSAGE가 발생한후
          * 2. 상대가 Chat에 진입한경우 즉 FETCH_MESSAGES가 발생한후
          */
-        this.socket.on(Types_1.ChattyEvent.UPDATE_MESSAGES, function (messages) {
-            if (!_this.updateMessagesHandler) {
-                throw new _1.ChattyException('E4006', 'updateMessagesHandler');
-            }
-            console.debug('::: Chatty UPDATE_MESSAGES');
-            _this.updateMessagesHandler(messages, null);
+        this.socket.on(Types_1.ChattyEvent.UPDATE_MESSAGES, function (data) {
+            console.debug(':: ChattyChat UPDATE_MESSAGES');
+            _this.onMessagesUpdate && _this.onMessagesUpdate(data);
         });
-        this.socket.on(Types_1.ChattyEvent.REFRESH_CHAT_DONE, function (chat) {
-            if (!_this.refreshChatHandler) {
-                throw new _1.ChattyException('E4006', 'refreshChatHandler');
-            }
-            console.debug("::: Chatty REFRESH_CHAT_DONE", chat);
-            _this.refreshChatHandler(chat, null);
+        this.socket.on(Types_1.ChattyEvent.REFRESH_CHAT_DONE, function (data) {
+            console.debug(":: ChattyChat REFRESH_CHAT_DONE", data);
+            _this.onChatRefresh && _this.onChatRefresh(data);
         });
-        this.socket.on(Types_1.ChattyEvent.REFRESH_CHAT_FAIL, function (err) {
-            if (!_this.refreshChatHandler) {
-                throw new _1.ChattyException('E4006', 'refreshChatHandler');
-            }
-            console.warn("::: Chatty REFRESH_CHAT_FAIL", err);
-            _this.refreshChatHandler(null, err);
+        this.socket.on(Types_1.ChattyEvent.REFRESH_CHAT_FAIL, function (data) {
+            console.warn(":: ChattyChat REFRESH_CHAT_FAIL error", data === null || data === void 0 ? void 0 : data.error.message);
+            _this.onChatRefresh && _this.onChatRefresh(data);
         });
     };
-    Chat.prototype.removeListener = function () {
+    ChattyChat.prototype.removeListener = function () {
         if (!this.socket) {
-            throw new _1.ChattyException('E4004');
+            console.warn(':: ChattyChat socket is not connected');
+            return;
         }
         this.socket.off(Types_1.ChattyEvent.CONNECT_DONE);
         this.socket.off(Types_1.ChattyEvent.CONNECT_FAIL);
@@ -1527,182 +3945,120 @@ var Chat = /** @class */ (function () {
         this.socket.off(Types_1.ChattyEvent.SEND_MESSAGE_DONE);
         this.socket.off(Types_1.ChattyEvent.SEND_MESSAGE_FAIL);
         this.socket.off(Types_1.ChattyEvent.SEND_MESSAGE_RETRY);
-        this.socket.off(Types_1.ChattyEvent.NEW_MESSAGE);
+        this.socket.off(Types_1.ChattyEvent.RECEIVE_MESSAGE);
         this.socket.off(Types_1.ChattyEvent.MARK_AS_READ_DONE);
         this.socket.off(Types_1.ChattyEvent.MARK_AS_READ_FAIL);
         this.socket.off(Types_1.ChattyEvent.MARK_AS_READ_BYPASS);
         this.socket.off(Types_1.ChattyEvent.REFRESH_CHAT_DONE);
         this.socket.off(Types_1.ChattyEvent.REFRESH_CHAT_FAIL);
+        this.socket = undefined;
     };
-    return Chat;
+    return ChattyChat;
 }());
-exports.Chat = Chat;
+exports.ChattyChat = ChattyChat;
 
 
 /***/ }),
 
-/***/ "./src/ChatList.ts":
-/*!*************************!*\
-  !*** ./src/ChatList.ts ***!
-  \*************************/
+/***/ "./src/ChattyList.ts":
+/*!***************************!*\
+  !*** ./src/ChattyList.ts ***!
+  \***************************/
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.ChatList = void 0;
+exports.ChattyList = void 0;
 var socket_io_client_1 = __importDefault(__webpack_require__(/*! socket.io-client */ "./node_modules/socket.io-client/build/cjs/index.js"));
-var _1 = __importStar(__webpack_require__(/*! . */ "./src/index.ts"));
+var _1 = __importDefault(__webpack_require__(/*! . */ "./src/index.ts"));
 var Types_1 = __webpack_require__(/*! ./Types */ "./src/Types.ts");
 var dev =  true ? 'dev' : 0;
-var ChatList = /** @class */ (function () {
-    function ChatList() {
-        this.socket = null;
-        this.connectHandler = null;
-        this.fetchChatListHandler = null;
-        this.refreshChatListHandler = null;
+var ChattyList = /** @class */ (function () {
+    function ChattyList(payload) {
+        this.onChatListConnect = payload.onChatListConnect;
+        this.onChatListFetch = payload.onChatListFetch;
+        this.onChatListUpdate = payload.onChatListUpdate;
     }
-    ChatList.prototype.onConnectHandler = function (handler) {
-        this.connectHandler = handler;
-    };
-    ChatList.prototype.onFetchChatListHandler = function (handler) {
-        this.fetchChatListHandler = handler;
-    };
-    ChatList.prototype.onRefreshChatListHandler = function (handler) {
-        this.refreshChatListHandler = handler;
-    };
-    ChatList.prototype.connect = function () {
-        if (!_1.default.app || !_1.default.member) {
-            throw new _1.ChattyException('E2001');
-        }
+    ChattyList.prototype.connect = function () {
+        var _a, _b, _c;
         var url =  false ? 0 : "wss://".concat(dev, "socket.chatty-cloud.com");
-        this.socket = (0, socket_io_client_1.default)("".concat(url, "/chatlist.").concat(_1.default.app.name), {
+        this.socket = (0, socket_io_client_1.default)("".concat(url, "/chatlist.").concat((_a = _1.default.app) === null || _a === void 0 ? void 0 : _a.name), {
             transports: ["polling", "websocket"],
-            query: { MemberId: _1.default.member.id },
+            query: {
+                MemberId: (_b = _1.default.member) === null || _b === void 0 ? void 0 : _b.id,
+                AppId: (_c = _1.default.app) === null || _c === void 0 ? void 0 : _c.id
+            },
             auth: {
-                token: _1.default.apiKey
+                apikey: _1.default.apiKey
             }
         });
         this.addListener();
     };
-    ChatList.prototype.disconnect = function () {
-        if (!this.socket) {
-            throw new _1.ChattyException('E4003');
-        }
-        this.socket.disconnect();
+    ChattyList.prototype.disconnect = function () {
+        var _a;
+        (_a = this.socket) === null || _a === void 0 ? void 0 : _a.disconnect();
         this.removeListener();
-        this.socket = null;
-        console.debug('::: Chatty DISCONNECT_DONE ChatList');
+        console.debug(':: ChattyList disconnected');
     };
-    ChatList.prototype.fetchChatList = function (options) {
-        if (!this.socket) {
-            throw new _1.ChattyException('E4003');
-        }
-        this.socket.emit(Types_1.ChattyEvent.FETCH_CHATLIST, options);
+    ChattyList.prototype.fetchChatList = function (payload) {
+        var _a;
+        (_a = this.socket) === null || _a === void 0 ? void 0 : _a.emit(Types_1.ChattyEvent.FETCH_CHATLIST, payload);
     };
-    ChatList.prototype.refreshChatList = function (ChatId) {
-        if (!this.socket) {
-            throw new _1.ChattyException('E4003');
-        }
-        this.socket.emit(Types_1.ChattyEvent.REFRESH_CHATLIST, ChatId);
+    ChattyList.prototype.updateChatList = function (payload) {
+        var _a;
+        (_a = this.socket) === null || _a === void 0 ? void 0 : _a.emit(Types_1.ChattyEvent.UPDATE_CHATLIST, payload);
     };
-    ChatList.prototype.addListener = function () {
+    ChattyList.prototype.addListener = function () {
         var _this = this;
         if (!this.socket) {
-            throw new _1.ChattyException('E4003');
+            console.warn(':: ChattyList socket is not connected');
+            return;
         }
         this.socket.on(Types_1.ChattyEvent.CONNECT_DONE, function (data) {
-            if (!_this.connectHandler) {
-                throw new _1.ChattyException('E4005', 'connectHandler');
-            }
-            console.debug('::: Chatty CONNECT_DONE ChatList');
-            _this.connectHandler(data, null);
+            console.debug(':: ChattyList CONNECT_DONE ChatList', data);
+            _this.onChatListConnect && _this.onChatListConnect(data);
         });
-        this.socket.on(Types_1.ChattyEvent.CONNECT_FAIL, function (err) {
-            if (!_this.connectHandler) {
-                throw new _1.ChattyException('E4005', 'connectHandler');
-            }
-            console.debug('::: Chatty CONNECT_FAIL', err);
-            _this.connectHandler(null, err);
+        this.socket.on(Types_1.ChattyEvent.CONNECT_FAIL, function (data) {
+            console.warn(':: ChattyList CONNECT_FAIL', data === null || data === void 0 ? void 0 : data.error.message);
+            _this.onChatListConnect && _this.onChatListConnect(data);
         });
-        this.socket.on(Types_1.ChattyEvent.CONNECT_ERROR, function (err) {
-            // server connect_error event
-            // 1. check server running
-            if (!_this.connectHandler) {
-                throw new _1.ChattyException('E4005', 'connectHandler');
-            }
-            console.debug('::: Chatty CONNECT_ERROR', err);
-            _this.connectHandler(null, err);
+        this.socket.on(Types_1.ChattyEvent.FETCH_CHATLIST_DONE, function (data) {
+            console.debug(':: ChattyList FETCH_CHATLIST_DONE', data);
+            _this.onChatListFetch && _this.onChatListFetch(data);
         });
-        this.socket.on(Types_1.ChattyEvent.FETCH_CHATLIST_DONE, function (chats) {
-            if (!_this.fetchChatListHandler) {
-                throw new _1.ChattyException('E4005', 'fetchChatListHandler');
-            }
-            console.debug('::: Chatty FETCH_CHATLIST_DONE', chats);
-            _this.fetchChatListHandler(chats, null);
+        this.socket.on(Types_1.ChattyEvent.FETCH_CHATLIST_FAIL, function (data) {
+            console.warn(':: ChattyList FETCH_CHATLIST_FAIL', data === null || data === void 0 ? void 0 : data.error.message);
+            _this.onChatListFetch && _this.onChatListFetch(data);
         });
-        this.socket.on(Types_1.ChattyEvent.FETCH_CHATLIST_FAIL, function (err) {
-            if (!_this.fetchChatListHandler) {
-                throw new _1.ChattyException('E4005', 'fetchChatListHandler');
-            }
-            console.debug('::: Chatty FETCH_CHATLIST_FAIL', err);
-            _this.fetchChatListHandler(null, err);
+        this.socket.on(Types_1.ChattyEvent.UPDATE_CHATLIST_DONE, function (data) {
+            console.debug(":: ChattyList REFRESH_CHATLIST_DONE", data);
+            _this.onChatListUpdate && _this.onChatListUpdate(data);
         });
-        this.socket.on(Types_1.ChattyEvent.REFRESH_CHATLIST_DONE, function (chat) {
-            if (!_this.refreshChatListHandler) {
-                throw new _1.ChattyException('E4005', 'refreshChatListHandler');
-            }
-            console.debug("::: Chatty REFRESH_CHATLIST_DONE", chat);
-            _this.refreshChatListHandler(chat, null);
-        });
-        this.socket.on(Types_1.ChattyEvent.REFRESH_CHATLIST_FAIL, function (err) {
-            if (!_this.refreshChatListHandler) {
-                throw new _1.ChattyException('E4005', 'refreshChatListHandler');
-            }
-            console.debug("::: Chatty REFRESH_CHATLIST_FAIL", err);
-            _this.refreshChatListHandler(null, err);
+        this.socket.on(Types_1.ChattyEvent.UPDATE_CHATLIST_FAIL, function (data) {
+            console.warn(":: ChattyList REFRESH_CHATLIST_FAIL", data === null || data === void 0 ? void 0 : data.error.message);
+            _this.onChatListUpdate && _this.onChatListUpdate(data);
         });
     };
-    ChatList.prototype.removeListener = function () {
+    ChattyList.prototype.removeListener = function () {
         if (!this.socket) {
-            throw new _1.ChattyException('E4003');
+            console.warn(':: ChattyList socket is not connected');
+            return;
         }
         this.socket.off(Types_1.ChattyEvent.CONNECT_DONE);
         this.socket.off(Types_1.ChattyEvent.CONNECT_FAIL);
         this.socket.off(Types_1.ChattyEvent.FETCH_CHATLIST_DONE);
         this.socket.off(Types_1.ChattyEvent.FETCH_CHATLIST_FAIL);
-        this.socket.off(Types_1.ChattyEvent.REFRESH_CHATLIST_DONE);
-        this.socket.off(Types_1.ChattyEvent.REFRESH_CHATLIST_FAIL);
+        this.socket.off(Types_1.ChattyEvent.UPDATE_CHATLIST_DONE);
+        this.socket.off(Types_1.ChattyEvent.UPDATE_CHATLIST_FAIL);
+        this.socket = undefined;
     };
-    return ChatList;
+    return ChattyList;
 }());
-exports.ChatList = ChatList;
+exports.ChattyList = ChattyList;
 
 
 /***/ }),
@@ -1725,7 +4081,7 @@ exports.ChatList = ChatList;
 
  */
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.ChattyEvent = exports.SupportedVideoFormat = exports.SupportedImageFormat = exports.DefaultSystemMessages = exports.MemberPermissionType = exports.MessageByEnum = exports.MessageTypeEnum = exports.ChatMemberRoleEnum = exports.AppUserRoleEnum = exports.AppPricingEnum = exports.AppStateEnum = void 0;
+exports.ChattyEvent = exports.ChattyNotificationType = exports.SupportedVideoFormat = exports.SupportedImageFormat = exports.DefaultSystemMessages = exports.MessageByEnum = exports.MessageTypeEnum = exports.MemberPermissionType = exports.ChatMemberRoleEnum = exports.AppUserRoleEnum = exports.AppPricingEnum = exports.AppStateEnum = void 0;
 var AppStateEnum;
 (function (AppStateEnum) {
     AppStateEnum["ACTIVE"] = "ACTIVE";
@@ -1754,6 +4110,15 @@ var ChatMemberRoleEnum;
     ChatMemberRoleEnum["OBSERVER"] = "OBSERVER";
 })(ChatMemberRoleEnum = exports.ChatMemberRoleEnum || (exports.ChatMemberRoleEnum = {}));
 ;
+var MemberPermissionType;
+(function (MemberPermissionType) {
+    MemberPermissionType["NONE"] = "NONE";
+    MemberPermissionType["READ"] = "READ";
+    MemberPermissionType["WRITE"] = "WRITE";
+    MemberPermissionType["ADMIN"] = "ADMIN";
+    MemberPermissionType["SUPER"] = "SUPER";
+})(MemberPermissionType = exports.MemberPermissionType || (exports.MemberPermissionType = {}));
+;
 var MessageTypeEnum;
 (function (MessageTypeEnum) {
     MessageTypeEnum["TEXT"] = "TEXT";
@@ -1767,15 +4132,6 @@ var MessageByEnum;
     MessageByEnum["ADMIN"] = "ADMIN";
     MessageByEnum["SYSTEM"] = "SYSTEM";
 })(MessageByEnum = exports.MessageByEnum || (exports.MessageByEnum = {}));
-;
-var MemberPermissionType;
-(function (MemberPermissionType) {
-    MemberPermissionType[MemberPermissionType["NONE"] = 0] = "NONE";
-    MemberPermissionType[MemberPermissionType["READ"] = 1] = "READ";
-    MemberPermissionType[MemberPermissionType["WRITE"] = 2] = "WRITE";
-    MemberPermissionType[MemberPermissionType["ADMIN"] = 5] = "ADMIN";
-    MemberPermissionType[MemberPermissionType["SUPER"] = 10] = "SUPER";
-})(MemberPermissionType = exports.MemberPermissionType || (exports.MemberPermissionType = {}));
 ;
 /**
  * Default System Message
@@ -1791,6 +4147,11 @@ exports.DefaultSystemMessages = {
 };
 exports.SupportedImageFormat = ['image/png', 'image/jpg', 'image/jpeg', 'image/gif', 'image/webp'];
 exports.SupportedVideoFormat = ['video/mp4', 'video/webm'];
+var ChattyNotificationType;
+(function (ChattyNotificationType) {
+    ChattyNotificationType["CHATTY_NEW_MESSAGE"] = "CHATTY_NEW_MESSAGE";
+    ChattyNotificationType["CHATTY_SYSTEM_MESSAGE"] = "CHATTY_SYSTEM_MESSAGE";
+})(ChattyNotificationType = exports.ChattyNotificationType || (exports.ChattyNotificationType = {}));
 /**
  *
   ___             _      _____
@@ -1805,14 +4166,13 @@ var ChattyEvent;
     ChattyEvent["CONNECT"] = "connection";
     ChattyEvent["CONNECT_DONE"] = "connect_done";
     ChattyEvent["CONNECT_FAIL"] = "connect_fail";
-    ChattyEvent["CONNECT_ERROR"] = "connect_error";
     ChattyEvent["DISCONNECT"] = "disconnect";
     ChattyEvent["DISCONNECT_DONE"] = "disconnect_done";
     ChattyEvent["DISCONNECT_FAIL"] = "disconnect_fail";
     ChattyEvent["REFRESH_CHAT"] = "refresh_chat";
     ChattyEvent["REFRESH_CHAT_DONE"] = "refresh_chat_done";
     ChattyEvent["REFRESH_CHAT_FAIL"] = "refresh_chat_fail";
-    ChattyEvent["NEW_MESSAGE"] = "new_message";
+    ChattyEvent["RECEIVE_MESSAGE"] = "receive_message";
     ChattyEvent["FETCH_MESSAGES"] = "fetch_messages";
     ChattyEvent["FETCH_MESSAGES_DONE"] = "fetch_messages_done";
     ChattyEvent["FETCH_MESSAGES_FAIL"] = "fetch_messages_fail";
@@ -1820,9 +4180,9 @@ var ChattyEvent;
     ChattyEvent["FETCH_CHATLIST"] = "fetch_chatlist";
     ChattyEvent["FETCH_CHATLIST_DONE"] = "fetch_chatlist_done";
     ChattyEvent["FETCH_CHATLIST_FAIL"] = "fetch_chatlist_fail";
-    ChattyEvent["REFRESH_CHATLIST"] = "refresh_chatlist";
-    ChattyEvent["REFRESH_CHATLIST_DONE"] = "refresh_chatlist_done";
-    ChattyEvent["REFRESH_CHATLIST_FAIL"] = "refresh_chatlist_fail";
+    ChattyEvent["UPDATE_CHATLIST"] = "update_chatlist";
+    ChattyEvent["UPDATE_CHATLIST_DONE"] = "update_chatlist_done";
+    ChattyEvent["UPDATE_CHATLIST_FAIL"] = "update_chatlist_fail";
     ChattyEvent["SEND_MESSAGE"] = "send_message";
     ChattyEvent["SEND_MESSAGE_DONE"] = "send_message_done";
     ChattyEvent["SEND_MESSAGE_FAIL"] = "send_message_fail";
@@ -1846,21 +4206,6 @@ var ChattyEvent;
 
 "use strict";
 
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
 var __assign = (this && this.__assign) || function () {
     __assign = Object.assign || function(t) {
         for (var s, i = 1, n = arguments.length; i < n; i++) {
@@ -1931,38 +4276,33 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.ChattyTypes = exports.ChattyException = exports.ERR = void 0;
+exports.ChattyList = exports.ChattyChat = exports.ChattyTypes = void 0;
 var Types_1 = __webpack_require__(/*! ./Types */ "./src/Types.ts");
-var Chat_1 = __webpack_require__(/*! ./Chat */ "./src/Chat.ts");
-var ChatList_1 = __webpack_require__(/*! ./ChatList */ "./src/ChatList.ts");
 var package_json_1 = __webpack_require__(/*! ../package.json */ "./package.json");
-console.debug('::: Chatty MODE', "development");
+var axios_1 = __importDefault(__webpack_require__(/*! axios */ "./node_modules/axios/index.js"));
+var ChattyChat_1 = __webpack_require__(/*! ./ChattyChat */ "./src/ChattyChat.ts");
+Object.defineProperty(exports, "ChattyChat", ({ enumerable: true, get: function () { return ChattyChat_1.ChattyChat; } }));
+var ChattyList_1 = __webpack_require__(/*! ./ChattyList */ "./src/ChattyList.ts");
+Object.defineProperty(exports, "ChattyList", ({ enumerable: true, get: function () { return ChattyList_1.ChattyList; } }));
+console.debug(':: ChattyClient MODE', "development");
 var dev =  true ? 'dev' : 0;
 var Chatty = /** @class */ (function () {
-    /**
-     * @constructor
-     * @param chatty instance of chatlist in case of coming from chatlist
-     * @description When creating chat instance to update changing of chat room to chat list automatically, put chat list instance as a parameter of Chat constructor
-     */
-    function Chatty(chatty) {
-        if (chatty) {
-            this.chatlist = chatty.chatlist;
-        }
-        else {
-            this.chatlist = new ChatList_1.ChatList();
-        }
-        this.chat = new Chat_1.Chat();
+    function Chatty() {
     }
-    Chatty.init = function (initials) {
+    Chatty.init = function (payload) {
+        var _a;
         return __awaiter(this, void 0, void 0, function () {
-            var deviceInfo, err_1;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
+            var deviceInfo, _b, _c, err_1;
+            return __generator(this, function (_d) {
+                switch (_d.label) {
                     case 0:
-                        _a.trys.push([0, 2, , 3]);
-                        this.apiUrl =  false ? 0 : "https://".concat(dev, "api.chatty-cloud.com");
-                        this.apiKey = initials.apiKey;
+                        _d.trys.push([0, 3, , 4]);
+                        this.apiKey = payload.apiKey;
+                        axiosHeaderConfig(this.apiKey);
                         deviceInfo = {
                             platform: navigator.platform,
                             language: navigator.language,
@@ -1970,21 +4310,25 @@ var Chatty = /** @class */ (function () {
                             userAgent: navigator.userAgent,
                             sdkVersion: package_json_1.version
                         };
-                        return [4 /*yield*/, this.updateMember(__assign(__assign({}, initials.member), { device: deviceInfo }))];
+                        _b = this;
+                        return [4 /*yield*/, this.getApp()];
                     case 1:
-                        _a.sent();
-                        if (!this.member) {
-                            console.warn('::: Chatty INIT Fail - Chatty member is not initialized');
-                        }
-                        else {
-                            console.info('::: Chatty INIT Success');
-                        }
-                        return [3 /*break*/, 3];
+                        _b.app = _d.sent();
+                        _c = this;
+                        return [4 /*yield*/, this.upsertMember(__assign(__assign({}, payload.member), { device: deviceInfo, AppId: (_a = this.app) === null || _a === void 0 ? void 0 : _a.id }))];
                     case 2:
-                        err_1 = _a.sent();
-                        console.warn('::: Chatty INIT Fail ', err_1);
-                        return [3 /*break*/, 3];
-                    case 3: return [2 /*return*/];
+                        _c.member = _d.sent();
+                        if (this.app && this.member) {
+                            console.debug(':: ChattyClient init success');
+                            console.debug(':: ChattyClient [App]', this.app);
+                            console.debug(':: ChattyClient [Member]', this.member);
+                        }
+                        return [3 /*break*/, 4];
+                    case 3:
+                        err_1 = _d.sent();
+                        console.warn(':: ChattyClient init fail', err_1.message);
+                        return [3 /*break*/, 4];
+                    case 4: return [2 /*return*/];
                 }
             });
         });
@@ -1997,265 +4341,31 @@ var Chatty = /** @class */ (function () {
                     case 0:
                         _a.trys.push([0, 3, , 4]);
                         if (!this.member) return [3 /*break*/, 2];
-                        return [4 /*yield*/, this.updateMember({ id: this.member.id, deviceToken: '' })];
+                        return [4 /*yield*/, this.upsertMember({ id: this.member.id, deviceToken: '' })];
                     case 1:
                         _a.sent();
                         _a.label = 2;
                     case 2:
+                        axiosHeaderConfig();
                         this.apiKey = undefined;
                         this.app = undefined;
                         this.member = undefined;
                         return [3 /*break*/, 4];
                     case 3:
                         err_2 = _a.sent();
-                        console.warn('::: Chatty EXIT Fail ', err_2);
+                        console.warn(':: ChattyClient EXIT Fail ', err_2.message);
                         return [3 /*break*/, 4];
                     case 4: return [2 /*return*/];
                 }
             });
         });
     };
-    /**
-     
-          __          __  ___      __
-    _____/ /_  ____ _/ /_/ (_)____/ /_
-   / ___/ __ \/ __ `/ __/ / / ___/ __/
-  / /__/ / / / /_/ / /_/ / (__  ) /_
-  \___/_/ /_/\__,_/\__/_/_/____/\__/
-                                      
-  
-     */
-    Chatty.prototype.connectChatList = function () {
-        if (!this.chatlist) {
-            console.warn('::: Chatty ChatList instance is not exist');
-            return;
-        }
-        this.chatlist.connect();
-    };
-    Chatty.prototype.disconnectChatList = function () {
-        if (!this.chatlist) {
-            console.warn('::: Chatty ChatList instance is not exist');
-            return;
-        }
-        this.chatlist.disconnect();
-        this.chatlist = null;
-    };
-    Chatty.prototype.fetchChatList = function (options) {
-        if (!this.chatlist) {
-            console.warn('::: Chatty ChatList instance is not exist');
-            return;
-        }
-        if (!options) {
-            console.warn('::: Chatty fetchChatList error: Please check params options whether it is null or not');
-            return;
-        }
-        this.chatlist.fetchChatList(options);
-    };
-    Chatty.prototype.refreshChatList = function (ChatId) {
-        if (!this.chatlist) {
-            console.warn('::: Chatty refreshChatList error: ChatList instance is not exist');
-            return;
-        }
-        if (!ChatId) {
-            console.warn('::: Chatty refreshChatList error: Please check params ChatId whether it is null or not');
-            return;
-        }
-        this.chatlist.refreshChatList(ChatId);
-    };
-    /**
-   
-          __          __  ___      __        __                    ____
-    _____/ /_  ____ _/ /_/ (_)____/ /_      / /_  ____ _____  ____/ / /__  _____
-   / ___/ __ \/ __ `/ __/ / / ___/ __/_____/ __ \/ __ `/ __ \/ __  / / _ \/ ___/
-  / /__/ / / / /_/ / /_/ / (__  ) /_/_____/ / / / /_/ / / / / /_/ / /  __/ /
-  \___/_/ /_/\__,_/\__/_/_/____/\__/     /_/ /_/\__,_/_/ /_/\__,_/_/\___/_/
-                                                                              
-  
-    */
-    Chatty.prototype.onChatListConnect = function (handler) {
-        if (!this.chatlist) {
-            throw new ChattyException('E4001');
-        }
-        this.chatlist.onConnectHandler(handler);
-    };
-    Chatty.prototype.onChatListFetch = function (handler) {
-        if (!this.chatlist) {
-            throw new ChattyException('E4001');
-        }
-        this.chatlist.onFetchChatListHandler(handler);
-    };
-    Chatty.prototype.onChatListRefresh = function (handler) {
-        if (!this.chatlist) {
-            throw new ChattyException('E4001');
-        }
-        this.chatlist.onRefreshChatListHandler(handler);
-    };
-    /**
-     
-          __          __
-    _____/ /_  ____ _/ /_
-   / ___/ __ \/ __ `/ __/
-  / /__/ / / / /_/ / /_
-  \___/_/ /_/\__,_/\__/
-                         
-  
-     */
-    Chatty.prototype.connectChat = function (options) {
-        if (!this.chat) {
-            throw new ChattyException('E4002');
-        }
-        this.chat.connect(options, this.chatlist);
-    };
-    Chatty.prototype.disconnectChat = function () {
-        if (!this.chat) {
-            throw new ChattyException('E4002');
-        }
-        this.chat.disconnect();
-        this.chat = null;
-    };
-    Chatty.prototype.fetchMessages = function (refresh) {
-        if (!this.chat) {
-            throw new ChattyException('E4002');
-        }
-        this.chat.fetchMessages(refresh);
-    };
-    Chatty.prototype.sendTextMessage = function (text) {
-        if (!text) {
-            console.debug('::: Chatty sendTextMessage function param error: text is empty');
-            return;
-        }
-        if (!this.chat) {
-            throw new ChattyException('E4002');
-        }
-        if (!Chatty.member) {
-            throw new ChattyException('E2001');
-        }
-        // 실제 저장이 되지 않은상태에서 chat 에서 보여져야 하기에 message id 가 여기서 부여되어야 함
-        var message = {
-            id: 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) { var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8); return v.toString(16); }),
-            createdAt: new Date(),
-            text: text,
-            type: 'TEXT',
-            by: 'USER',
-            SenderId: Chatty.member.id,
-            // Sender: {
-            //   id: Chatty.member.id
-            // }
-        };
-        this.chat.sendMessage(message);
-        // return temporary message object before inserting to database
-        return message;
-    };
-    Chatty.prototype.sendFileMessage = function (files) {
-        var _this = this;
-        if (!files) {
-            console.debug('::: Chatty sendFileMessage function param error: files are undefined');
-            return;
-        }
-        if (files.length > 4) {
-            console.debug('::: Chatty sendFileMessage function param error: files length can not exceed 4');
-            return;
-        }
-        if (!this.chat || !this.chat.id) {
-            throw new ChattyException('E4002');
-        }
-        if (!Chatty.member) {
-            throw new ChattyException('E2001');
-        }
-        // 실제 저장이 되지 않은상태에서 chat 에서 보여져야 하기에 message id 가 여기서 부여되어야 함
-        var message = {
-            id: 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) { var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8); return v.toString(16); }),
-            createdAt: new Date(),
-            files: files,
-            text: 'File Message',
-            type: 'FILE',
-            by: 'USER'
-        };
-        Chatty.uploadFiles(files)
-            .then(function (files) {
-            if (!_this.chat) {
-                throw new ChattyException('E2002');
-            }
-            console.info('::: Chatty uploadFiles success', files);
-            _this.chat.sendMessage(__assign(__assign({}, message), { files: files }));
-        })
-            .catch(function (err) {
-            console.debug('::: Chatty uploadFiles error', err);
-        });
-        // return temporary message object with SenderId before inserting to database
-        return __assign(__assign({}, message), { SenderId: Chatty.member.id });
-    };
-    Chatty.prototype.refreshChat = function (ChatId) {
-        if (!ChatId) {
-            throw new ChattyException('E1001');
-        }
-        if (!this.chat) {
-            throw new ChattyException('E4002');
-        }
-        this.chat.refreshChat(ChatId);
-    };
-    /**
-     
-          __          __        __                    ____
-    _____/ /_  ____ _/ /_      / /_  ____ _____  ____/ / /__  _____
-   / ___/ __ \/ __ `/ __/_____/ __ \/ __ `/ __ \/ __  / / _ \/ ___/
-  / /__/ / / / /_/ / /_/_____/ / / / /_/ / / / / /_/ / /  __/ /
-  \___/_/ /_/\__,_/\__/     /_/ /_/\__,_/_/ /_/\__,_/_/\___/_/
-                                                                   
-  
-     */
-    Chatty.prototype.onChatConnect = function (handler) {
-        if (!this.chat) {
-            throw new ChattyException('E4002');
-        }
-        this.chat.onConnectHandler(handler);
-    };
-    Chatty.prototype.onMessageSend = function (handler) {
-        if (!this.chat) {
-            throw new ChattyException('E4002');
-        }
-        this.chat.onSendMessageHandler(handler);
-    };
-    Chatty.prototype.onMessagesFetch = function (handler) {
-        if (!this.chat) {
-            throw new ChattyException('E4002');
-        }
-        this.chat.onFetchMessagesHandler(handler);
-    };
-    Chatty.prototype.onMessagesUpdate = function (handler) {
-        if (!this.chat) {
-            throw new ChattyException('E4002');
-        }
-        this.chat.onUpdateMessagesHandler(handler);
-    };
-    Chatty.prototype.onMessageReceive = function (handler) {
-        if (!this.chat) {
-            throw new ChattyException('E4002');
-        }
-        this.chat.onNewMessageHandler(handler);
-    };
-    Chatty.prototype.onChatRefresh = function (handler) {
-        if (!this.chat) {
-            throw new ChattyException('E4002');
-        }
-        this.chat.onRefreshChatHandler(handler);
-    };
-    /**
-     
-           __        __  _            ____                 __  _
-     _____/ /_____ _/ /_(_)____      / __/_  ______  _____/ /_(_)___  ____  _____
-    / ___/ __/ __ `/ __/ / ___/_____/ /_/ / / / __ \/ ___/ __/ / __ \/ __ \/ ___/
-   (__  ) /_/ /_/ / /_/ / /__/_____/ __/ /_/ / / / / /__/ /_/ / /_/ / / / (__  )
-  /____/\__/\__,_/\__/_/\___/     /_/  \__,_/_/ /_/\___/\__/_/\____/_/ /_/____/
-                                                                                 
-  
-    */
     Chatty.generateDistinctKey = function (data) {
         if (!data || (Array.isArray(data) && data.length < 1)) {
-            throw new ChattyException('E1001');
+            console.warn(':: ChattyClient generateDistinctKey function param error: data is undefined');
         }
         var distinct = data;
-        console.debug('::: generateDistinctKey', distinct);
+        console.debug(':: ChattyClient generateDistinctKey', distinct);
         if (Array.isArray(distinct)) {
             distinct.sort();
             distinct = distinct.toString();
@@ -2281,452 +4391,143 @@ var Chatty = /** @class */ (function () {
         function bit_rol(d, _) { return d << _ | d >>> 32 - _; }
         return MD5(JSON.stringify(distinct));
     };
-    Chatty.createChat = function (payload) {
+    Chatty.createChat = function (chat) {
         return __awaiter(this, void 0, void 0, function () {
-            var _this = this;
             return __generator(this, function (_a) {
-                return [2 /*return*/, new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-                        var response, data, err_3;
-                        return __generator(this, function (_a) {
-                            switch (_a.label) {
-                                case 0:
-                                    _a.trys.push([0, 5, , 6]);
-                                    if (!payload) {
-                                        throw new ChattyException('E1001');
-                                    }
-                                    if (!Chatty.apiKey) {
-                                        throw new ChattyException('E2000');
-                                    }
-                                    return [4 /*yield*/, fetch("".concat(Chatty.apiUrl, "/chat"), {
-                                            method: 'POST',
-                                            headers: {
-                                                token: Chatty.apiKey,
-                                                'Content-Type': 'application/json'
-                                            },
-                                            body: JSON.stringify(payload)
-                                        })];
-                                case 1:
-                                    response = _a.sent();
-                                    if (!response.ok) return [3 /*break*/, 3];
-                                    return [4 /*yield*/, response.json()];
-                                case 2:
-                                    data = _a.sent();
-                                    resolve(data);
-                                    return [3 /*break*/, 4];
-                                case 3: 
-                                // const json = await response.json();
-                                throw new ChattyException('E3001', "createChat error - response status: ".concat(response.status));
-                                case 4: return [3 /*break*/, 6];
-                                case 5:
-                                    err_3 = _a.sent();
-                                    reject(err_3);
-                                    return [3 /*break*/, 6];
-                                case 6: return [2 /*return*/];
-                            }
-                        });
-                    }); })];
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, axios_1.default.post('/chats', chat)
+                            .then(function (res) { return Promise.resolve(res.data); })
+                            .catch(function (err) { return Promise.reject(err.response.data.response || err.response.data); })];
+                    case 1: return [2 /*return*/, _a.sent()];
+                }
             });
         });
     };
     Chatty.updateChat = function (chat) {
-        var _this = this;
-        return new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-            var response, data, err_4;
+        return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0:
-                        _a.trys.push([0, 5, , 6]);
-                        if (!chat) {
-                            throw new ChattyException('E1001');
-                        }
-                        if (!chat.id) {
-                            throw new ChattyException('E2005');
-                        }
-                        if (!Chatty.apiKey) {
-                            throw new ChattyException('E2000');
-                        }
-                        if (!Chatty.apiUrl) {
-                            throw new ChattyException('E2001');
-                        }
-                        return [4 /*yield*/, fetch("".concat(Chatty.apiUrl, "/chat/").concat(chat.id), {
-                                method: 'PUT',
-                                headers: {
-                                    token: Chatty.apiKey,
-                                    'Content-Type': 'application/json'
-                                }
-                            })];
-                    case 1:
-                        response = _a.sent();
-                        if (!response.ok) return [3 /*break*/, 3];
-                        return [4 /*yield*/, response.json()];
-                    case 2:
-                        data = _a.sent();
-                        resolve(data);
-                        return [3 /*break*/, 4];
-                    case 3: 
-                    // const json = await response.json();
-                    throw new ChattyException('E3001', "updateChat error - response status: ".concat(response.status));
-                    case 4: return [3 /*break*/, 6];
-                    case 5:
-                        err_4 = _a.sent();
-                        reject(err_4);
-                        return [3 /*break*/, 6];
-                    case 6: return [2 /*return*/];
+                    case 0: return [4 /*yield*/, axios_1.default.put("/chats", chat)
+                            .then(function (res) { return Promise.resolve(res.data); })
+                            .catch(function (err) { return Promise.reject(err.response.data.response || err.response.data); })];
+                    case 1: return [2 /*return*/, _a.sent()];
                 }
             });
-        }); });
+        });
     };
     /**
      * @description
-     * non-socket(API call) 방식으로 message를 생성하는 함수
-     * 두번째 인자를 통해 system message 와 user message로 구분한다
-     * api server에서는 message가 발생하면 chat Members 에게 data push를 보낸다.
-     * client 의 Chat socket에서는 이 push가 오면 fetchMessages를 호출해서 Chat을 업데이트해야한다.
+     * non-socket api for create message. commonly used for user custom system message
+     * To send system message, 'by' of message payload should be 'SYSTEM'
+     * When recive system message at api server, send push notification to chat members
+     * When chat socket is connected and received notification, should call fetchMessages to update chat messages
      * @param message
      * @param system
      * @returns
      */
     Chatty.createMessage = function (message, system) {
         return __awaiter(this, void 0, void 0, function () {
-            var _this = this;
             return __generator(this, function (_a) {
-                return [2 /*return*/, new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-                        var response, data, err_5;
-                        return __generator(this, function (_a) {
-                            switch (_a.label) {
-                                case 0:
-                                    _a.trys.push([0, 5, , 6]);
-                                    if (!message) {
-                                        throw new ChattyException('E1001');
-                                    }
-                                    if (!message.ChatId) {
-                                        throw new ChattyException('E2005');
-                                    }
-                                    if (!Chatty.apiKey) {
-                                        throw new ChattyException('E2000');
-                                    }
-                                    message.by = system ? 'SYSTEM' : 'USER';
-                                    return [4 /*yield*/, fetch("".concat(Chatty.apiUrl, "/message"), {
-                                            method: 'POST',
-                                            headers: {
-                                                token: Chatty.apiKey,
-                                                'Content-Type': 'application/json'
-                                            },
-                                            body: JSON.stringify(message)
-                                        })];
-                                case 1:
-                                    response = _a.sent();
-                                    if (!response.ok) return [3 /*break*/, 3];
-                                    return [4 /*yield*/, response.json()];
-                                case 2:
-                                    data = _a.sent();
-                                    resolve(data);
-                                    return [3 /*break*/, 4];
-                                case 3: 
-                                // const json = await response.json();
-                                throw new ChattyException('E3001', "createMessage error - response status: ".concat(response.status));
-                                case 4: return [3 /*break*/, 6];
-                                case 5:
-                                    err_5 = _a.sent();
-                                    reject(err_5);
-                                    return [3 /*break*/, 6];
-                                case 6: return [2 /*return*/];
-                            }
-                        });
-                    }); })];
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, axios_1.default.post('/messages', message)
+                            .then(function (res) { return Promise.resolve(res.data); })
+                            .catch(function (err) { return Promise.reject(err.response.data.response || err.response.data); })];
+                    case 1: return [2 /*return*/, _a.sent()];
+                }
             });
         });
     };
     Chatty.getMissedCount = function () {
+        var _a;
         return __awaiter(this, void 0, void 0, function () {
-            var _this = this;
-            return __generator(this, function (_a) {
-                return [2 /*return*/, new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-                        var response, data, err_6;
-                        return __generator(this, function (_a) {
-                            switch (_a.label) {
-                                case 0:
-                                    _a.trys.push([0, 5, , 6]);
-                                    if (!Chatty.apiKey) {
-                                        throw new ChattyException('E2000', 'getMissedCount error');
-                                    }
-                                    if (!Chatty.apiUrl || !Chatty.member) {
-                                        throw new ChattyException('E2001');
-                                    }
-                                    return [4 /*yield*/, fetch("".concat(Chatty.apiUrl, "/missed/").concat(Chatty.member.id), {
-                                            method: 'GET',
-                                            headers: {
-                                                token: Chatty.apiKey,
-                                                'Content-Type': 'application/json'
-                                            }
-                                        })];
-                                case 1:
-                                    response = _a.sent();
-                                    if (!response.ok) return [3 /*break*/, 3];
-                                    return [4 /*yield*/, response.json()];
-                                case 2:
-                                    data = _a.sent();
-                                    resolve(data);
-                                    return [3 /*break*/, 4];
-                                case 3: 
-                                // const json = await response.json();
-                                throw new ChattyException('E3001', "getMissedCount error - response status: ".concat(response.status));
-                                case 4: return [3 /*break*/, 6];
-                                case 5:
-                                    err_6 = _a.sent();
-                                    reject(err_6);
-                                    return [3 /*break*/, 6];
-                                case 6: return [2 /*return*/];
-                            }
-                        });
-                    }); })];
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0: return [4 /*yield*/, axios_1.default.get("/missed-count?MemberIds=".concat((_a = this.member) === null || _a === void 0 ? void 0 : _a.id))
+                            .then(function (res) { return Promise.resolve(res.data); })
+                            .catch(function (err) {
+                            // console.warn(':: ChattyClient getMissedCount fail', err.response.data.response || err.response.data);
+                            Promise.reject(err.response.data.response || err.response.data);
+                        })];
+                    case 1: return [2 /*return*/, _b.sent()];
+                }
             });
         });
     };
     Chatty.getMembersByGroup = function (group) {
-        var _this = this;
-        return new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-            var response, data, err_7;
+        return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0:
-                        _a.trys.push([0, 5, , 6]);
-                        if (!group) {
-                            throw new ChattyException('E1001', 'getMembersByGroup method has no parameter "group"');
-                        }
-                        if (!Chatty.apiKey) {
-                            throw new ChattyException('E2000');
-                        }
-                        if (!Chatty.apiUrl) {
-                            throw new ChattyException('E2001');
-                        }
-                        return [4 /*yield*/, fetch("".concat(Chatty.apiUrl, "/members?group=").concat(group), {
-                                method: 'GET',
-                                headers: {
-                                    token: Chatty.apiKey,
-                                    'Content-Type': 'application/json'
-                                }
-                            })];
-                    case 1:
-                        response = _a.sent();
-                        if (!response.ok) return [3 /*break*/, 3];
-                        return [4 /*yield*/, response.json()];
-                    case 2:
-                        data = _a.sent();
-                        resolve(data);
-                        return [3 /*break*/, 4];
-                    case 3: 
-                    // const json = await response.json();
-                    throw new ChattyException('E3001', "getMembersByGroup error - response status: ".concat(response.status));
-                    case 4: return [3 /*break*/, 6];
-                    case 5:
-                        err_7 = _a.sent();
-                        reject(err_7);
-                        return [3 /*break*/, 6];
-                    case 6: return [2 /*return*/];
+                    case 0: return [4 /*yield*/, axios_1.default.get("/members?group=".concat(group))
+                            .then(function (res) { return Promise.resolve(res.data); })
+                            .catch(function (err) { return Promise.reject(err.response.data.response || err.response.data); })];
+                    case 1: return [2 /*return*/, _a.sent()];
                 }
             });
-        }); });
+        });
+    };
+    Chatty.getApp = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, axios_1.default.get("/apps/withoutid")
+                            .then(function (res) { return Promise.resolve(res.data); })
+                            .catch(function (err) { return Promise.reject(err.response.data.response || err.response.data); })];
+                    case 1: return [2 /*return*/, _a.sent()];
+                }
+            });
+        });
     };
     /**
      *
      * @param member
      */
-    Chatty.updateMember = function (member) {
+    Chatty.upsertMember = function (member) {
         return __awaiter(this, void 0, void 0, function () {
-            var _this = this;
             return __generator(this, function (_a) {
-                return [2 /*return*/, new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-                        var response, member_1, err_8;
-                        return __generator(this, function (_a) {
-                            switch (_a.label) {
-                                case 0:
-                                    _a.trys.push([0, 5, , 6]);
-                                    if (!member) {
-                                        throw new ChattyException('E1001', 'updateMember has no member parameter');
-                                    }
-                                    if (!member.id) {
-                                        throw new ChattyException('E1007', 'member parameter of updateMember method should have member id ');
-                                    }
-                                    if (!Chatty.apiKey) {
-                                        throw new ChattyException('E2000');
-                                    }
-                                    if (!Chatty.apiUrl) {
-                                        throw new ChattyException('E2001');
-                                    }
-                                    if (Chatty.member) {
-                                        if (member.id && member.id !== Chatty.member.id) {
-                                            throw new ChattyException('E2004');
-                                        }
-                                    }
-                                    return [4 /*yield*/, fetch("".concat(Chatty.apiUrl, "/member"), {
-                                            method: 'PUT',
-                                            body: JSON.stringify(member),
-                                            headers: {
-                                                token: Chatty.apiKey,
-                                                'Content-Type': 'application/json'
-                                            }
-                                        })];
-                                case 1:
-                                    response = _a.sent();
-                                    if (!response.ok) return [3 /*break*/, 3];
-                                    return [4 /*yield*/, response.json()];
-                                case 2:
-                                    member_1 = _a.sent();
-                                    if (member_1) {
-                                        Chatty.app = member_1.App;
-                                        delete member_1['App'];
-                                        Chatty.member = member_1;
-                                    }
-                                    resolve(member_1);
-                                    return [3 /*break*/, 4];
-                                case 3: 
-                                // const json = await response.json();
-                                throw new ChattyException('E3001', "updateMember error - response status: ".concat(response.status));
-                                case 4: return [3 /*break*/, 6];
-                                case 5:
-                                    err_8 = _a.sent();
-                                    reject(err_8);
-                                    return [3 /*break*/, 6];
-                                case 6: return [2 /*return*/];
-                            }
-                        });
-                    }); })];
-            });
-        });
-    };
-    /**
-     * @deprecated
-     */
-    Chatty.changeMemberPermission = function (MemberId, permission) {
-        return __awaiter(this, void 0, void 0, function () {
-            var _this = this;
-            return __generator(this, function (_a) {
-                return [2 /*return*/, new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-                        var response, data, err_9;
-                        return __generator(this, function (_a) {
-                            switch (_a.label) {
-                                case 0:
-                                    _a.trys.push([0, 5, , 6]);
-                                    if (!MemberId || !permission) {
-                                        throw new ChattyException('E1001');
-                                    }
-                                    if (!Chatty.apiKey) {
-                                        throw new ChattyException('E2000');
-                                    }
-                                    if (!Chatty.apiUrl || !Chatty.member) {
-                                        throw new ChattyException('E2001');
-                                    }
-                                    if (Chatty.member.permission < Types_1.MemberPermissionType.ADMIN) {
-                                        throw new ChattyException('E2003');
-                                    }
-                                    return [4 /*yield*/, fetch("".concat(Chatty.apiUrl, "/member"), {
-                                            method: 'PUT',
-                                            body: JSON.stringify({ permission: permission }),
-                                            headers: {
-                                                token: Chatty.apiKey,
-                                                'Content-Type': 'application/json'
-                                            }
-                                        })];
-                                case 1:
-                                    response = _a.sent();
-                                    if (!response.ok) return [3 /*break*/, 3];
-                                    return [4 /*yield*/, response.json()];
-                                case 2:
-                                    data = _a.sent();
-                                    resolve(data);
-                                    return [3 /*break*/, 4];
-                                case 3: 
-                                // const json = await response.json();
-                                throw new ChattyException('E3001', "changeMemberPermission error - response status: ".concat(response.status));
-                                case 4: return [3 /*break*/, 6];
-                                case 5:
-                                    err_9 = _a.sent();
-                                    reject(err_9);
-                                    return [3 /*break*/, 6];
-                                case 6: return [2 /*return*/];
-                            }
-                        });
-                    }); })];
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, axios_1.default.put('/members', member)
+                            .then(function (res) { return Promise.resolve(res.data); })
+                            .catch(function (err) { return Promise.reject(err.response.data.response || err.response.data); })];
+                    case 1: return [2 /*return*/, _a.sent()];
+                }
             });
         });
     };
     Chatty.deleteMember = function (MemberId) {
+        var _a;
         return __awaiter(this, void 0, void 0, function () {
-            var _this = this;
-            return __generator(this, function (_a) {
-                return [2 /*return*/, new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-                        var response, data, err_10;
-                        return __generator(this, function (_a) {
-                            switch (_a.label) {
-                                case 0:
-                                    _a.trys.push([0, 5, , 6]);
-                                    if (!MemberId) {
-                                        throw new ChattyException('E1001');
-                                    }
-                                    if (!Chatty.apiKey) {
-                                        throw new ChattyException('E2000');
-                                    }
-                                    if (!Chatty.apiUrl || !Chatty.member) {
-                                        throw new ChattyException('E2001');
-                                    }
-                                    if (Chatty.member.permission < Types_1.MemberPermissionType.ADMIN) {
-                                        throw new ChattyException('E2003');
-                                    }
-                                    return [4 /*yield*/, fetch("".concat(Chatty.apiUrl, "/member/").concat(MemberId), {
-                                            method: 'DELETE',
-                                            headers: {
-                                                token: Chatty.apiKey,
-                                                'Content-Type': 'application/json'
-                                            }
-                                        })];
-                                case 1:
-                                    response = _a.sent();
-                                    if (!response.ok) return [3 /*break*/, 3];
-                                    return [4 /*yield*/, response.json()];
-                                case 2:
-                                    data = _a.sent();
-                                    resolve(data);
-                                    return [3 /*break*/, 4];
-                                case 3: 
-                                // const json = await response.json();
-                                throw new ChattyException('E3001', "deleteMember error - response status: ".concat(response.status));
-                                case 4: return [3 /*break*/, 6];
-                                case 5:
-                                    err_10 = _a.sent();
-                                    reject(err_10);
-                                    return [3 /*break*/, 6];
-                                case 6: return [2 /*return*/];
-                            }
-                        });
-                    }); })];
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0: return [4 /*yield*/, axios_1.default.delete("/members/".concat(MemberId, "?AppId=").concat((_a = this.app) === null || _a === void 0 ? void 0 : _a.id))
+                            .then(function (res) { return Promise.resolve(res.data); })
+                            .catch(function (err) { return Promise.reject(err.response.data.response || err.response.data); })];
+                    case 1: return [2 /*return*/, _b.sent()];
+                }
             });
         });
     };
-    Chatty.fileCheckValidation = function (files) {
+    Chatty.validateFiles = function (files) {
         return __awaiter(this, void 0, void 0, function () {
             var _this = this;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0: return [4 /*yield*/, Promise.all(files.map(function (file) { return __awaiter(_this, void 0, void 0, function () {
-                            return __generator(this, function (_a) {
-                                if (!Chatty.app) {
-                                    throw new ChattyException('E2001');
-                                }
+                            var _a, _b;
+                            return __generator(this, function (_c) {
                                 if (!file.type) {
-                                    throw new ChattyException('E1002');
+                                    console.warn('File type is not defined');
                                 }
-                                if (file.type.split('/')[0] === 'image' && !Chatty.app.enableImageUpload) {
-                                    throw new ChattyException('E1003');
+                                if (file.type.split('/')[0] === 'image' && !((_a = this.app) === null || _a === void 0 ? void 0 : _a.enableImageUpload)) {
+                                    console.warn('Image upload is not enabled');
                                 }
-                                if (file.type.split('/')[0] === 'video' && !Chatty.app.enableVideoUpload) {
-                                    throw new ChattyException('E1004');
+                                if (file.type.split('/')[0] === 'video' && !((_b = this.app) === null || _b === void 0 ? void 0 : _b.enableVideoUpload)) {
+                                    console.warn('Video upload is not enabled');
                                 }
                                 if (file.type.split('/')[0] === 'image' && !Types_1.SupportedImageFormat.includes(file.type)) {
-                                    throw new ChattyException('E1005');
+                                    console.warn("Image format '".concat(file.type, "' is not supported"));
                                 }
                                 if (file.type.split('/')[0] === 'video' && !Types_1.SupportedVideoFormat.includes(file.type)) {
-                                    throw new ChattyException('E1005');
+                                    console.warn("Video format '".concat(file.type, "' is not supported"));
                                 }
                                 return [2 /*return*/];
                             });
@@ -2739,7 +4540,7 @@ var Chatty = /** @class */ (function () {
         });
     };
     /**
-     *
+     * @description FileType 형식을 준수해야함 . type이 없는경우 cloudflare에서 Network error를 반환함
      * @param file
      * @returns
      */
@@ -2748,56 +4549,31 @@ var Chatty = /** @class */ (function () {
             var _this = this;
             return __generator(this, function (_a) {
                 return [2 /*return*/, new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-                        var CF_DELIVERY_1, result, err_11;
+                        var result, err_3;
                         var _this = this;
                         return __generator(this, function (_a) {
                             switch (_a.label) {
                                 case 0:
                                     _a.trys.push([0, 2, , 3]);
-                                    if (!files || !files.length) {
-                                        throw new ChattyException('E1001');
+                                    if (!(files === null || files === void 0 ? void 0 : files.length)) {
+                                        console.warn('uploadFiles function parameter "files" is empty');
                                     }
-                                    Chatty.fileCheckValidation(files);
-                                    CF_DELIVERY_1 = 'https://imagedelivery.net/Se1RT11x0rciKkirEISyIg';
+                                    Chatty.validateFiles(files);
                                     return [4 /*yield*/, Promise.all(files.map(function (file) { return __awaiter(_this, void 0, void 0, function () {
-                                            var response, json, form, uploadResult, json_1;
+                                            var resUploadUrl, uploadURL, form, resUpload;
                                             var _a;
                                             return __generator(this, function (_b) {
                                                 switch (_b.label) {
-                                                    case 0:
-                                                        if (!Chatty.apiKey) {
-                                                            throw new ChattyException('E2000');
-                                                        }
-                                                        return [4 /*yield*/, fetch("".concat(Chatty.apiUrl, "/uploadurl"), {
-                                                                method: 'GET',
-                                                                headers: {
-                                                                    token: Chatty.apiKey,
-                                                                    'Content-Type': 'application/json'
-                                                                }
-                                                            })];
+                                                    case 0: return [4 /*yield*/, axios_1.default.get('/file/upload')];
                                                     case 1:
-                                                        response = _b.sent();
-                                                        if (!response.ok) return [3 /*break*/, 7];
-                                                        return [4 /*yield*/, response.json()];
-                                                    case 2:
-                                                        json = _b.sent();
+                                                        resUploadUrl = _b.sent();
+                                                        uploadURL = resUploadUrl.data.uploadURL;
                                                         form = new FormData();
                                                         form.append('file', file);
-                                                        return [4 /*yield*/, fetch(json.uploadURL, {
-                                                                method: 'POST',
-                                                                body: form
-                                                            })];
-                                                    case 3:
-                                                        uploadResult = _b.sent();
-                                                        if (!uploadResult.ok) return [3 /*break*/, 5];
-                                                        return [4 /*yield*/, uploadResult.json()];
-                                                    case 4:
-                                                        json_1 = _b.sent();
-                                                        return [2 /*return*/, { uri: "".concat(CF_DELIVERY_1, "/").concat(json_1.result.id, "/").concat((_a = Chatty.app) === null || _a === void 0 ? void 0 : _a.thumbnailSize) }];
-                                                    case 5: throw new ChattyException('E3002', 'Uploading image file failed');
-                                                    case 6: return [3 /*break*/, 8];
-                                                    case 7: throw new ChattyException('E3002', 'Get SignedUrl for image uploading failed');
-                                                    case 8: return [2 /*return*/];
+                                                        return [4 /*yield*/, axios_1.default.post(uploadURL, form)];
+                                                    case 2:
+                                                        resUpload = _b.sent();
+                                                        return [2 /*return*/, { uri: "https://imagedelivery.net/Se1RT11x0rciKkirEISyIg/".concat(resUpload.data.id, "/").concat((_a = Chatty.app) === null || _a === void 0 ? void 0 : _a.thumbnailSize) }];
                                                 }
                                             });
                                         }); }))];
@@ -2806,8 +4582,8 @@ var Chatty = /** @class */ (function () {
                                     resolve(result);
                                     return [3 /*break*/, 3];
                                 case 2:
-                                    err_11 = _a.sent();
-                                    reject(err_11);
+                                    err_3 = _a.sent();
+                                    reject(err_3);
                                     return [3 /*break*/, 3];
                                 case 3: return [2 /*return*/];
                             }
@@ -2817,353 +4593,77 @@ var Chatty = /** @class */ (function () {
         });
     };
     Chatty.joinChat = function (ChatId) {
+        var _a, _b;
         return __awaiter(this, void 0, void 0, function () {
-            var _this = this;
-            return __generator(this, function (_a) {
-                return [2 /*return*/, new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-                        var response, data, err_12;
-                        return __generator(this, function (_a) {
-                            switch (_a.label) {
-                                case 0:
-                                    _a.trys.push([0, 5, , 6]);
-                                    if (!ChatId) {
-                                        throw new ChattyException('E1001');
-                                    }
-                                    if (!Chatty.apiKey) {
-                                        throw new ChattyException('E2000');
-                                    }
-                                    if (!Chatty.apiUrl || !Chatty.member) {
-                                        throw new ChattyException('E2001');
-                                    }
-                                    return [4 /*yield*/, fetch("".concat(Chatty.apiUrl, "/chatmember/join"), {
-                                            method: 'POST',
-                                            headers: {
-                                                token: Chatty.apiKey,
-                                                'Content-Type': 'application/json'
-                                            },
-                                            body: JSON.stringify({
-                                                ChatId: ChatId,
-                                                MemberId: Chatty.member.id
-                                            })
-                                        })];
-                                case 1:
-                                    response = _a.sent();
-                                    if (!response.ok) return [3 /*break*/, 3];
-                                    return [4 /*yield*/, response.json()];
-                                case 2:
-                                    data = _a.sent();
-                                    resolve(data);
-                                    return [3 /*break*/, 4];
-                                case 3: 
-                                // const json = await response.json();
-                                throw new ChattyException('E3001', "joinChat error - response status: ".concat(response.status));
-                                case 4: return [3 /*break*/, 6];
-                                case 5:
-                                    err_12 = _a.sent();
-                                    reject(err_12);
-                                    return [3 /*break*/, 6];
-                                case 6: return [2 /*return*/];
-                            }
-                        });
-                    }); })];
+            return __generator(this, function (_c) {
+                switch (_c.label) {
+                    case 0: return [4 /*yield*/, axios_1.default.post("/join", { AppId: (_a = this.app) === null || _a === void 0 ? void 0 : _a.id, ChatId: ChatId, MemberId: (_b = this.member) === null || _b === void 0 ? void 0 : _b.id })
+                            .then(function (res) { return Promise.resolve(res.data); })
+                            .catch(function (err) { return Promise.reject(err.response.data.response || err.response.data); })];
+                    case 1:
+                        _c.sent();
+                        return [2 /*return*/];
+                }
             });
         });
     };
     Chatty.leaveChat = function (ChatId) {
+        var _a, _b;
         return __awaiter(this, void 0, void 0, function () {
-            var _this = this;
-            return __generator(this, function (_a) {
-                return [2 /*return*/, new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-                        var response, data, err_13;
-                        return __generator(this, function (_a) {
-                            switch (_a.label) {
-                                case 0:
-                                    _a.trys.push([0, 5, , 6]);
-                                    if (!ChatId) {
-                                        throw new ChattyException('E1001');
-                                    }
-                                    if (!Chatty.apiKey) {
-                                        throw new ChattyException('E2000');
-                                    }
-                                    if (!Chatty.apiUrl || !Chatty.member) {
-                                        throw new ChattyException('E2001');
-                                    }
-                                    return [4 /*yield*/, fetch("".concat(Chatty.apiUrl, "/chatmember/leave"), {
-                                            method: 'DELETE',
-                                            headers: {
-                                                token: Chatty.apiKey,
-                                                'Content-Type': 'application/json'
-                                            },
-                                            body: JSON.stringify({
-                                                ChatId: ChatId,
-                                                MemberId: Chatty.member.id
-                                            })
-                                        })];
-                                case 1:
-                                    response = _a.sent();
-                                    if (!response.ok) return [3 /*break*/, 3];
-                                    return [4 /*yield*/, response.json()];
-                                case 2:
-                                    data = _a.sent();
-                                    resolve(data);
-                                    return [3 /*break*/, 4];
-                                case 3: 
-                                // const json = await response.json();
-                                throw new ChattyException('E3001', "leaveChat error - response status: ".concat(response.status));
-                                case 4: return [3 /*break*/, 6];
-                                case 5:
-                                    err_13 = _a.sent();
-                                    reject(err_13);
-                                    return [3 /*break*/, 6];
-                                case 6: return [2 /*return*/];
-                            }
-                        });
-                    }); })];
+            return __generator(this, function (_c) {
+                switch (_c.label) {
+                    case 0: return [4 /*yield*/, axios_1.default.post("/leave", { AppId: (_a = this.app) === null || _a === void 0 ? void 0 : _a.id, ChatId: ChatId, MemberId: (_b = this.member) === null || _b === void 0 ? void 0 : _b.id })
+                            .then(function (res) { return Promise.resolve(res.data); })
+                            .catch(function (err) { return Promise.reject(err.response.data.response || err.response.data); })];
+                    case 1:
+                        _c.sent();
+                        return [2 /*return*/];
+                }
             });
         });
     };
+    /**
+     * @description non-socket api, Send push message to invited member.
+     * @param ChatId
+     * @param MemberIds
+     * @returns
+     */
     Chatty.inviteMembers = function (ChatId, MemberIds) {
+        var _a;
         return __awaiter(this, void 0, void 0, function () {
-            var _this = this;
-            return __generator(this, function (_a) {
-                return [2 /*return*/, new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-                        var response, data, err_14;
-                        return __generator(this, function (_a) {
-                            switch (_a.label) {
-                                case 0:
-                                    _a.trys.push([0, 5, , 6]);
-                                    if (!ChatId || !MemberIds) {
-                                        throw new ChattyException('E1001');
-                                    }
-                                    if (!Chatty.apiKey) {
-                                        throw new ChattyException('E2000');
-                                    }
-                                    if (!Chatty.apiUrl) {
-                                        throw new ChattyException('E2001');
-                                    }
-                                    return [4 /*yield*/, fetch("".concat(Chatty.apiUrl, "/chatmember/invite"), {
-                                            method: 'POST',
-                                            headers: {
-                                                token: Chatty.apiKey,
-                                                'Content-Type': 'application/json'
-                                            },
-                                            body: JSON.stringify({
-                                                ChatId: ChatId,
-                                                MemberIds: MemberIds
-                                            })
-                                        })];
-                                case 1:
-                                    response = _a.sent();
-                                    if (!response.ok) return [3 /*break*/, 3];
-                                    return [4 /*yield*/, response.json()];
-                                case 2:
-                                    data = _a.sent();
-                                    resolve(data);
-                                    return [3 /*break*/, 4];
-                                case 3: 
-                                // const json = await response.json();
-                                throw new ChattyException('E3001', "inviteMembers error - response status: ".concat(response.status));
-                                case 4: return [3 /*break*/, 6];
-                                case 5:
-                                    err_14 = _a.sent();
-                                    reject(err_14);
-                                    return [3 /*break*/, 6];
-                                case 6: return [2 /*return*/];
-                            }
-                        });
-                    }); })];
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0: return [4 /*yield*/, axios_1.default.post("/invite", { AppId: (_a = this.app) === null || _a === void 0 ? void 0 : _a.id, ChatId: ChatId, MemberIds: MemberIds })
+                            .then(function (res) { return Promise.resolve(res.data); })
+                            .catch(function (err) { return Promise.reject(err.response.data.response || err.response.data); })];
+                    case 1:
+                        _b.sent();
+                        return [2 /*return*/];
+                }
             });
         });
     };
     Chatty.excludeMembers = function (ChatId, MemberIds) {
+        var _a;
         return __awaiter(this, void 0, void 0, function () {
-            var _this = this;
-            return __generator(this, function (_a) {
-                return [2 /*return*/, new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-                        var response, data, err_15;
-                        return __generator(this, function (_a) {
-                            switch (_a.label) {
-                                case 0:
-                                    _a.trys.push([0, 5, , 6]);
-                                    if (!ChatId || !MemberIds) {
-                                        throw new ChattyException('E1001');
-                                    }
-                                    if (!Chatty.apiKey) {
-                                        throw new ChattyException('E2000');
-                                    }
-                                    if (!Chatty.apiUrl) {
-                                        throw new ChattyException('E2001');
-                                    }
-                                    return [4 /*yield*/, fetch("".concat(Chatty.apiUrl, "/chatmember/exclude"), {
-                                            method: 'DELETE',
-                                            headers: {
-                                                token: Chatty.apiKey,
-                                                'Content-Type': 'application/json'
-                                            },
-                                            body: JSON.stringify({
-                                                ChatId: ChatId,
-                                                MemberIds: MemberIds
-                                            })
-                                        })];
-                                case 1:
-                                    response = _a.sent();
-                                    if (!response.ok) return [3 /*break*/, 3];
-                                    return [4 /*yield*/, response.json()];
-                                case 2:
-                                    data = _a.sent();
-                                    resolve(data);
-                                    return [3 /*break*/, 4];
-                                case 3: 
-                                // const json = await response.json();
-                                throw new ChattyException('E3001', "excludeMembers error - response status: ".concat(response.status));
-                                case 4: return [3 /*break*/, 6];
-                                case 5:
-                                    err_15 = _a.sent();
-                                    reject(err_15);
-                                    return [3 /*break*/, 6];
-                                case 6: return [2 /*return*/];
-                            }
-                        });
-                    }); })];
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0: return [4 /*yield*/, axios_1.default.post("/exclude", { AppId: (_a = this.app) === null || _a === void 0 ? void 0 : _a.id, ChatId: ChatId, MemberIds: MemberIds })
+                            .then(function (res) { return Promise.resolve(res.data); })
+                            .catch(function (err) { return Promise.reject(err.response.data.response || err.response.data); })];
+                    case 1:
+                        _b.sent();
+                        return [2 /*return*/];
+                }
             });
         });
     };
     return Chatty;
 }());
-exports.ERR = {
-    E1001: 'Chatty error - Check function parameters are proper',
-    E1002: 'Chatty error - Check type of files parameters. it should contain uri, type, name',
-    E1003: 'Chatty error - Image upload not supported. configure your app setting in chatty-cloud dashboard',
-    E1004: 'Chatty error - Video upload not supported. configure your app setting in chatty-cloud dashboard',
-    E1005: 'Chatty error - Upload file format not supported',
-    E1006: 'Chatty error - Maximum count of uploading files is 4. more than 4 is not allowed',
-    E1007: "Chatty error - Check payload of member in init function. id and name should be passed",
-    E2000: 'Chatty error - Api Key is not valid. Please check apiKey param of init method',
-    E2001: 'Chatty error - Check Chatty class was initialized',
-    E2002: 'Chatty error - Chat instance does not exist',
-    E2003: 'Chatty error - Member permission not allwed',
-    E2004: 'Chatty error - Member id does not match',
-    E2005: 'Chatty error - Chat id does not exist in payload',
-    E3001: 'Chatty API error - ',
-    E3002: 'Chatty API error - ',
-    E4001: 'ChatList Socket error - Check chatlist instance was created or not',
-    E4002: 'Chat Socket error - Check chat instance was created or not',
-    E4003: 'ChatList Socket error - Check chatlist socket connection',
-    E4004: 'Chat Socket error - Check chat socket connection',
-    E4005: 'ChatList Socket error - Check chatlist handler is not initialized. handler: ',
-    E4006: 'Chat Socket error - Check chat handler is not initialized. handler: ',
-    E4007: "Chat Socket error - ChatConnectOptions should have one of 'at' or 'with'",
-    E4008: "Chat Socket error - When connect chat with 'with' options, peer member id is needed",
-};
-var ChattyException = /** @class */ (function (_super) {
-    __extends(ChattyException, _super);
-    function ChattyException(errorCode, customMessage) {
-        var _this = this;
-        var message;
-        switch (errorCode) {
-            case 'E1001':
-                message = "Chatty error - ".concat(customMessage || 'Check function parameters are proper');
-                break;
-            case 'E1002':
-                message = "Chatty error - Check type of files parameters exist or not";
-                break;
-            case 'E1003':
-                message = "Chatty error - Image upload not supported. configure your app setting in chatty-cloud dashboard";
-                break;
-            case 'E1004':
-                message = "Chatty error - Video upload not supported. configure your app setting in chatty-cloud dashboard";
-                break;
-            case 'E1005':
-                message = "Chatty error - Upload file format not supported";
-                break;
-            case 'E1006':
-                message = "Chatty error - Maximum count of uploading files is 4. more than 4 is not allowed";
-                break;
-            case 'E1007':
-                message = "Chatty error - Check payload of member in init function. id and name should be passed";
-                break;
-            case 'E2000':
-                message = "Chatty error - ".concat(customMessage, " App Key is not valid. Please check apiKey param of Chatty.init function in your source code");
-                break;
-            case 'E2001':
-                message = "Chatty error - Chatty was not initialized";
-                break;
-            case 'E2002':
-                message = "Chatty error - Chat instance does not exist";
-                break;
-            case 'E2003':
-                message = "Chatty error - Member permission not allwed";
-                break;
-            case 'E2004':
-                message = "Chatty error - Member id does not match";
-                break;
-            case 'E2005':
-                message = "Chatty error - Chat id does not exist in payload";
-                break;
-            case 'E3001':
-                message = "Chatty API error - ".concat(customMessage);
-                break;
-            case 'E3002':
-                message = "Chatty API error - ".concat(customMessage);
-                break;
-            case 'E4001':
-                message = "ChatList Socket error - Check chatlist instance was created or not";
-                break;
-            case 'E4002':
-                message = "Chat Socket error - Check chat instance was created or not";
-                break;
-            case 'E4003':
-                message = exports.ERR.E4003;
-                break;
-            case 'E4004':
-                message = exports.ERR.E4004;
-                break;
-            case 'E4005':
-                message = "ChatList Socket error - Check chatlist handler is not initialized. handler: ".concat(customMessage);
-                break;
-            case 'E4006':
-                message = "Chat Socket error - Check chat handler is not initialized. handler: ".concat(customMessage);
-                break;
-            case 'E4007':
-                message = exports.ERR.E4007;
-                break;
-            case 'E4008':
-                message = exports.ERR.E4008;
-                break;
-            default:
-                message = "Chatty Unknown error ".concat(customMessage);
-                break;
-        }
-        _this = _super.call(this, message) || this;
-        // Object.setPrototypeOf(this, new.target.prototype);
-        _this.errorCode = errorCode;
-        console.debug("::: Chatty Exception ".concat(errorCode), message);
-        reportError({
-            errorCode: errorCode,
-            errorMessage: message,
-            platform: navigator.platform,
-            language: navigator.language,
-            product: navigator.product,
-            userAgent: navigator.userAgent,
-            sdkVersion: package_json_1.version
-        });
-        return _this;
-    }
-    return ChattyException;
-}(Error));
-exports.ChattyException = ChattyException;
-function reportError(err) {
-    fetch("".concat(Chatty.apiUrl, "/report"), {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            token: Chatty.apiKey || '',
-        },
-        body: JSON.stringify({
-            type: 'SDK ERROR',
-            message: JSON.stringify(err)
-        })
-    });
+function axiosHeaderConfig(ApiKey) {
+    axios_1.default.defaults.baseURL =  false ? 0 : "https://".concat(dev, "api.chatty-cloud.com");
+    axios_1.default.defaults.headers.common['ApiKey'] = ApiKey || '';
+    axios_1.default.defaults.headers.common['Content-Type'] = 'application/json';
 }
 exports.ChattyTypes = __importStar(__webpack_require__(/*! ./Types */ "./src/Types.ts"));
 exports["default"] = Chatty;
@@ -6604,7 +8104,7 @@ exports.hasBinary = hasBinary;
 /***/ ((module) => {
 
 "use strict";
-module.exports = JSON.parse('{"name":"chatty-client","version":"0.0.5","description":"","main":"lib/src/index.js","types":"lib/src/index.d.ts","scripts":{"chatty-types":"rm -rf ./src/chatty-types && cp -r ~/chatty/server/chatty-types ./src/","--------- dev build guide -------":"git push > npm version patch > yarn build.dev > npm publish","--------- pro build guide -------":"git push > npm version minor > yarn build.pro > npm publish","build.local":"rm -rf .git/index.lock && rm -rf ./lib && webpack --config webpack.config.ts --env MODE=none","build.dev":"rm -rf .git/index.lock && rm -rf ./lib && webpack --config webpack.config.ts --env MODE=development && cp lib/src/* ../chatty-client-javascript/","build.pro":"rm -rf .git/index.lock && rm -rf ./lib && webpack --config webpack.config.ts --env MODE=production && cp lib/src/* ../chatty-client-javascript/","build":"webpack --config webpack.config.ts --env MODE=production && cp lib/src/* ../chatty-client-javascript/"},"repository":"https://github.com/chatty-cloud/chatty-cloud-sdk.git","bugs":{"url":"https://github.com/chatty-cloud/chatty-cloud-sdk/issues","email":"administrator@chatty-cloud.com"},"homepage":"https://www.chatty-cloud.com","keywords":[],"files":["lib"],"author":"chatty-cloud<administrator@chatty-cloud.com>","license":"ISC","dependencies":{"socket.io-client":"^4.1.3"},"devDependencies":{"@types/node":"^16.6.0","@types/webpack":"^5.28.0","path":"^0.12.7","ts-loader":"^9.2.5","ts-node":"^10.2.0","typescript":"^4.3.5","webpack":"^5.50.0","webpack-cli":"^4.7.2"}}');
+module.exports = JSON.parse('{"name":"chatty-client","version":"0.0.5","description":"","main":"lib/src/index.js","types":"lib/src/index.d.ts","scripts":{"chatty-types":"rm -rf ./src/chatty-types && cp -r ~/chatty/server/chatty-types ./src/","--------- dev build guide -------":"git push > npm version patch > yarn build.dev > npm publish","--------- pro build guide -------":"git push > npm version minor > yarn build.pro > npm publish","build.local":"rm -rf .git/index.lock && rm -rf ./lib && webpack --config webpack.config.ts --env MODE=none && cp lib/src/* ../chatty-client-javascript/","build.dev":"rm -rf .git/index.lock && rm -rf ./lib && webpack --config webpack.config.ts --env MODE=development && cp lib/src/* ../chatty-client-javascript/","build.pro":"rm -rf .git/index.lock && rm -rf ./lib && webpack --config webpack.config.ts --env MODE=production && cp lib/src/* ../chatty-client-javascript/","build":"webpack --config webpack.config.ts --env MODE=production && cp lib/src/* ../chatty-client-javascript/"},"repository":"https://github.com/chatty-cloud/chatty-cloud-sdk.git","bugs":{"url":"https://github.com/chatty-cloud/chatty-cloud-sdk/issues","email":"administrator@chatty-cloud.com"},"homepage":"https://www.chatty-cloud.com","keywords":[],"files":["lib"],"author":"chatty-cloud<administrator@chatty-cloud.com>","license":"ISC","dependencies":{"axios":"^0.27.2","socket.io-client":"^4.1.3"},"devDependencies":{"@types/node":"^16.6.0","@types/webpack":"^5.28.0","path":"^0.12.7","ts-loader":"^9.2.5","ts-node":"^10.2.0","typescript":"^4.3.5","webpack":"^5.50.0","webpack-cli":"^4.7.2"}}');
 
 /***/ })
 

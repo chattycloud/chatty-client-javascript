@@ -27,6 +27,13 @@ export declare enum ChatMemberRoleEnum {
     MEMBER = "MEMBER",
     OBSERVER = "OBSERVER"
 }
+export declare enum MemberPermissionType {
+    NONE = "NONE",
+    READ = "READ",
+    WRITE = "WRITE",
+    ADMIN = "ADMIN",
+    SUPER = "SUPER"
+}
 export declare enum MessageTypeEnum {
     TEXT = "TEXT",
     FILE = "FILE",
@@ -49,16 +56,16 @@ export declare type AppType = {
     language: string;
     country: string;
     enableTranslation: boolean;
+    enableJoinMessage: boolean;
+    enableLeaveMessage: boolean;
+    enableInviteMessage: boolean;
+    enableExcludeMessage: boolean;
+    enableImageUpload: boolean;
+    enableVideoUpload: boolean;
     chatPageLimit: number;
     chatListPageLimit: number;
     thumbnailSize: number;
-    joinMessage: boolean;
-    leaveMessage: boolean;
-    inviteMessage: boolean;
-    excludeMessage: boolean;
     notificationSound: string;
-    enableImageUpload: boolean;
-    enableVideoUpload: boolean;
     maxImageSize: number;
     maxVideoSize: number;
     multipleUploadCount: number;
@@ -140,7 +147,7 @@ export declare type MessageType = {
     }> | null;
     json: object | null;
     type: MessageTypeEnum;
-    translation: TranslationIndexSignature | null;
+    translation: ITranslationIndexSignature | null;
     by: MessageByEnum;
     readReceipt: number;
     createdAt: Date;
@@ -166,30 +173,23 @@ export declare type DeviceType = {
     userAgent: string;
     sdkVersion: string;
 };
-export declare enum MemberPermissionType {
-    NONE = 0,
-    READ = 1,
-    WRITE = 2,
-    ADMIN = 5,
-    SUPER = 10
-}
 export declare type FileType = {
     uri: string;
     type: string;
-    name: string;
+    name?: string;
 };
 export declare type FirebaseCredentialsType = {
     privateKey: string;
     clientEmail: string;
     projectId: string;
 };
-export interface SystemMessagesIndexSignature {
+export interface ISystemMessagesIndexSignature {
     [key: string]: string;
 }
-export interface AppIndexSignature {
+export interface IAppIndexSignature {
     [key: string]: object | string | boolean | number | Date | null;
 }
-export interface TranslationIndexSignature {
+export interface ITranslationIndexSignature {
     [key: string]: string;
 }
 /**
@@ -198,10 +198,14 @@ export interface TranslationIndexSignature {
  * invite 와 exclude의 경우에는 대상자에게는 push 를 보낸다.
  * join 와 leave 는 대상자를 제외한 chat member 모두에게 silent push를 보낸다
  */
-export declare const DefaultSystemMessages: SystemMessagesIndexSignature;
+export declare const DefaultSystemMessages: ISystemMessagesIndexSignature;
 export declare const SupportedImageFormat: string[];
 export declare const SupportedVideoFormat: string[];
-export interface ChatConnectOptions {
+export declare enum ChattyNotificationType {
+    CHATTY_NEW_MESSAGE = "CHATTY_NEW_MESSAGE",
+    CHATTY_SYSTEM_MESSAGE = "CHATTY_SYSTEM_MESSAGE"
+}
+export interface IChatConnectPayload {
     at?: string | undefined;
     with?: string | string[] | undefined;
     distinctKey?: string | null | undefined;
@@ -211,11 +215,14 @@ export interface ChatConnectOptions {
     data?: {} | undefined;
     group?: string | undefined;
 }
-export interface ChatListFetchOptions {
+export interface IFetchChatListPayload {
     refresh: boolean | undefined;
     group: string | undefined;
 }
-export interface MissedCountType {
+export interface IUpdateChatListPayload {
+    ChatId: string;
+}
+export interface IMissedCount {
     missedCount: {
         total: number;
         group: Array<{
@@ -224,36 +231,64 @@ export interface MissedCountType {
         }>;
     };
 }
+export declare type ErrorResponseType = {
+    message: string;
+};
+export declare type ChatConnectResponseType = ChatType & {
+    error: ErrorResponseType;
+};
+export declare type ChatDisconnectResponseType = {} & {
+    error: ErrorResponseType;
+};
+export declare type ChatListConnectResponseType = {} & {
+    error: ErrorResponseType;
+};
+export declare type ChatListDisconnectResponseType = {} & {
+    error: ErrorResponseType;
+};
+export declare type MessageSendResponseType = MessageType & {
+    error: ErrorResponseType;
+};
 export declare type MessagesFetchResponseType = {
     refresh: boolean;
     hasNext: boolean;
     messages: Array<MessageType>;
-} | null;
-export declare type ChatConnectResponseType = ChatType | null;
-export declare type ChatListConnectResponseType = {} | null;
-export declare type MessageSendResponseType = MessageType | null;
-export declare type MessageReceiveResponseType = MessageType | null;
-export declare type MessagesUpdateResponseType = Array<MessageType> | null;
-export declare type ChatListRefreshResponseType = ChatType | null;
-export declare type ChatRefreshResponseType = ChatType | null;
+} & {
+    error: ErrorResponseType;
+};
+export declare type MessageReceiveResponseType = MessageType & {
+    error: ErrorResponseType;
+};
+export declare type MessagesUpdateResponseType = Array<MessageType> & {
+    error: ErrorResponseType;
+};
 export declare type ChatListFetchResponseType = {
     refresh: boolean;
     hasNext: boolean;
     chats: Array<ChatType>;
-} | null;
-export declare type ErrorResponseType = {
-    message: string;
-} | null;
-export declare type ChatConnectHandler = (res: ChatConnectResponseType, err: ErrorResponseType) => void;
-export declare type ChatListConnectHandler = (res: ChatListConnectResponseType, err: ErrorResponseType) => void;
-export declare type MessageSendHandler = (res: MessageSendResponseType, err: ErrorResponseType) => void;
-export declare type MessagesFetchHandler = (res: MessagesFetchResponseType, err: ErrorResponseType) => void;
-export declare type ChatListFetchHandler = (res: ChatListFetchResponseType, err: ErrorResponseType) => void;
-export declare type MessageReceiveHandler = (res: MessageReceiveResponseType, err: ErrorResponseType) => void;
-export declare type MessagesUpdateHandler = (res: MessagesUpdateResponseType, err: ErrorResponseType) => void;
-export declare type ChatListRefreshHandler = (res: ChatListRefreshResponseType, err: ErrorResponseType) => void;
-export declare type ChatRefreshHandler = (res: ChatRefreshResponseType, err: ErrorResponseType) => void;
-export interface InitializePayloads {
+} & {
+    error: ErrorResponseType;
+};
+export declare type ChatListUpdateResponseType = {
+    id: string;
+} & {
+    error: ErrorResponseType;
+};
+export declare type ChatRefreshResponseType = ChatType & {
+    error: ErrorResponseType;
+};
+/** Chat Handlers */
+export declare type onChatConnect = (data: ChatConnectResponseType) => void;
+export declare type onChatRefresh = (data: ChatRefreshResponseType) => void;
+export declare type onMessagesFetch = (data: MessagesFetchResponseType) => void;
+export declare type onMessageSend = (data: MessageSendResponseType) => void;
+export declare type onMessageReceive = (data: MessageReceiveResponseType) => void;
+export declare type onMessagesUpdate = (data: MessagesUpdateResponseType) => void;
+/** ChatList Handlers */
+export declare type onChatListConnect = (data: ChatListConnectResponseType) => void;
+export declare type onChatListFetch = (data: ChatListFetchResponseType) => void;
+export declare type onChatListUpdate = (data: ChatListUpdateResponseType) => void;
+export interface IInitializePayloads {
     apiKey: string;
     member: Partial<MemberType>;
 }
@@ -270,14 +305,13 @@ export declare enum ChattyEvent {
     CONNECT = "connection",
     CONNECT_DONE = "connect_done",
     CONNECT_FAIL = "connect_fail",
-    CONNECT_ERROR = "connect_error",
     DISCONNECT = "disconnect",
     DISCONNECT_DONE = "disconnect_done",
     DISCONNECT_FAIL = "disconnect_fail",
     REFRESH_CHAT = "refresh_chat",
     REFRESH_CHAT_DONE = "refresh_chat_done",
     REFRESH_CHAT_FAIL = "refresh_chat_fail",
-    NEW_MESSAGE = "new_message",
+    RECEIVE_MESSAGE = "receive_message",
     FETCH_MESSAGES = "fetch_messages",
     FETCH_MESSAGES_DONE = "fetch_messages_done",
     FETCH_MESSAGES_FAIL = "fetch_messages_fail",
@@ -285,9 +319,9 @@ export declare enum ChattyEvent {
     FETCH_CHATLIST = "fetch_chatlist",
     FETCH_CHATLIST_DONE = "fetch_chatlist_done",
     FETCH_CHATLIST_FAIL = "fetch_chatlist_fail",
-    REFRESH_CHATLIST = "refresh_chatlist",
-    REFRESH_CHATLIST_DONE = "refresh_chatlist_done",
-    REFRESH_CHATLIST_FAIL = "refresh_chatlist_fail",
+    UPDATE_CHATLIST = "update_chatlist",
+    UPDATE_CHATLIST_DONE = "update_chatlist_done",
+    UPDATE_CHATLIST_FAIL = "update_chatlist_fail",
     SEND_MESSAGE = "send_message",
     SEND_MESSAGE_DONE = "send_message_done",
     SEND_MESSAGE_FAIL = "send_message_fail",
