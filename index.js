@@ -4326,7 +4326,7 @@ var Chatty = /** @class */ (function () {
                         return [3 /*break*/, 4];
                     case 3:
                         err_1 = _d.sent();
-                        console.warn(':: ChattyClient init fail', err_1.message);
+                        console.warn(":: ChattyClient init fail %O", err_1);
                         return [3 /*break*/, 4];
                     case 4: return [2 /*return*/];
                 }
