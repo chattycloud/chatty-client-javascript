@@ -3764,16 +3764,16 @@ var ChattyChat = /** @class */ (function () {
             // transports: ["polling", "websocket"],
             transports: ["websocket"],
             query: {
-                MemberId: (_c = _1.default.member) === null || _c === void 0 ? void 0 : _c.id,
-                AppId: (_d = _1.default.app) === null || _d === void 0 ? void 0 : _d.id,
-                at: payload.at,
-                with: payload.with,
-                distinctKey: payload.distinctKey,
-                private: payload.private,
-                name: payload.name,
-                image: payload.image,
-                data: payload.data && JSON.stringify(payload.data),
-                group: payload.group
+                MemberId: ((_c = _1.default.member) === null || _c === void 0 ? void 0 : _c.id) || '',
+                AppId: ((_d = _1.default.app) === null || _d === void 0 ? void 0 : _d.id) || '',
+                at: payload.at || '',
+                with: payload.with || '',
+                distinctKey: payload.distinctKey || '',
+                public: payload.public || '',
+                name: payload.name || '',
+                image: payload.image || '',
+                data: (payload.data && JSON.stringify(payload.data)) || '',
+                group: payload.group || ''
             },
             auth: {
                 apikey: _1.default.apiKey
@@ -3863,7 +3863,7 @@ var ChattyChat = /** @class */ (function () {
             _this.onChatConnect && _this.onChatConnect(data);
         });
         this.socket.on(Types_1.ChattyEvent.CONNECT_FAIL, function (data) {
-            console.warn(":: ChattyChat CONNECT_FAIL error", data === null || data === void 0 ? void 0 : data.error.message);
+            console.warn(data === null || data === void 0 ? void 0 : data.error.message);
             _this.onChatConnect && _this.onChatConnect(data);
         });
         this.socket.on(Types_1.ChattyEvent.FETCH_MESSAGES_DONE, function (data) {
@@ -3872,7 +3872,7 @@ var ChattyChat = /** @class */ (function () {
             _this.markAsRead();
         });
         this.socket.on(Types_1.ChattyEvent.FETCH_MESSAGES_FAIL, function (data) {
-            console.warn(":: ChattyChat FETCH_MESSAGES_FAIL error", data === null || data === void 0 ? void 0 : data.error.message);
+            console.warn(data === null || data === void 0 ? void 0 : data.error.message);
             _this.onMessagesFetch && _this.onMessagesFetch(data);
         });
         this.socket.on(Types_1.ChattyEvent.SEND_MESSAGE_DONE, function (data) {
@@ -3885,7 +3885,7 @@ var ChattyChat = /** @class */ (function () {
             }
         });
         this.socket.on(Types_1.ChattyEvent.SEND_MESSAGE_FAIL, function (data) {
-            console.warn(":: ChattyChat SEND_MESSAGE_FAIL error", data === null || data === void 0 ? void 0 : data.error.message);
+            console.warn(data === null || data === void 0 ? void 0 : data.error.message);
             _this.onMessageSend && _this.onMessageSend(data);
         });
         this.socket.on(Types_1.ChattyEvent.SEND_MESSAGE_RETRY, function (data) {
@@ -3907,7 +3907,7 @@ var ChattyChat = /** @class */ (function () {
             }
         });
         this.socket.on(Types_1.ChattyEvent.MARK_AS_READ_FAIL, function (data) {
-            console.warn(':: ChattyChat MARK_AS_READ_FAIL', data === null || data === void 0 ? void 0 : data.error.message);
+            console.warn(data === null || data === void 0 ? void 0 : data.error.message);
         });
         this.socket.on(Types_1.ChattyEvent.MARK_AS_READ_BYPASS, function () {
             // MARK_AS_READ_DONE의 응답으로  data가 MARK_AS_READ_BYPASS 인경우가 있다. 
@@ -3930,7 +3930,7 @@ var ChattyChat = /** @class */ (function () {
             _this.onChatRefresh && _this.onChatRefresh(data);
         });
         this.socket.on(Types_1.ChattyEvent.REFRESH_CHAT_FAIL, function (data) {
-            console.warn(":: ChattyChat REFRESH_CHAT_FAIL error", data === null || data === void 0 ? void 0 : data.error.message);
+            console.warn(data === null || data === void 0 ? void 0 : data.error.message);
             _this.onChatRefresh && _this.onChatRefresh(data);
         });
     };
@@ -4025,7 +4025,7 @@ var ChattyList = /** @class */ (function () {
             _this.onChatListConnect && _this.onChatListConnect(data);
         });
         this.socket.on(Types_1.ChattyEvent.CONNECT_FAIL, function (data) {
-            console.warn(':: ChattyList CONNECT_FAIL', data === null || data === void 0 ? void 0 : data.error.message);
+            console.warn(data === null || data === void 0 ? void 0 : data.error.message);
             _this.onChatListConnect && _this.onChatListConnect(data);
         });
         this.socket.on(Types_1.ChattyEvent.FETCH_CHATLIST_DONE, function (data) {
@@ -4033,7 +4033,7 @@ var ChattyList = /** @class */ (function () {
             _this.onChatListFetch && _this.onChatListFetch(data);
         });
         this.socket.on(Types_1.ChattyEvent.FETCH_CHATLIST_FAIL, function (data) {
-            console.warn(':: ChattyList FETCH_CHATLIST_FAIL', data === null || data === void 0 ? void 0 : data.error.message);
+            console.warn(data === null || data === void 0 ? void 0 : data.error.message);
             _this.onChatListFetch && _this.onChatListFetch(data);
         });
         this.socket.on(Types_1.ChattyEvent.UPDATE_CHATLIST_DONE, function (data) {
@@ -4041,7 +4041,7 @@ var ChattyList = /** @class */ (function () {
             _this.onChatListUpdate && _this.onChatListUpdate(data);
         });
         this.socket.on(Types_1.ChattyEvent.UPDATE_CHATLIST_FAIL, function (data) {
-            console.warn(":: ChattyList REFRESH_CHATLIST_FAIL", data === null || data === void 0 ? void 0 : data.error.message);
+            console.warn(data === null || data === void 0 ? void 0 : data.error.message);
             _this.onChatListUpdate && _this.onChatListUpdate(data);
         });
     };

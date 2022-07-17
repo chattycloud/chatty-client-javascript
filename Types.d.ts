@@ -97,8 +97,7 @@ export declare type UserType = {
 };
 export declare type ChatType = {
     id: string;
-    private: boolean;
-    open: boolean;
+    public: boolean;
     name: string;
     image: string;
     lastMessage: MessageType | null;
@@ -209,10 +208,10 @@ export interface IChatConnectPayload {
     at?: string | undefined;
     with?: string | string[] | undefined;
     distinctKey?: string | null | undefined;
-    private?: boolean | undefined;
+    public?: boolean | undefined;
     name?: string | undefined;
     image?: string | undefined;
-    data?: {} | undefined;
+    data?: any;
     group?: string | undefined;
 }
 export interface IFetchChatListPayload {
