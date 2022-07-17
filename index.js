@@ -3761,7 +3761,8 @@ var ChattyChat = /** @class */ (function () {
         // option checker
         Object.keys(payload).forEach(function (key) { return !payload[key] && delete payload[key]; });
         this.socket = (0, socket_io_client_1.default)("".concat(url, "/chat.").concat((_b = _1.default.app) === null || _b === void 0 ? void 0 : _b.name), {
-            transports: ["polling", "websocket"],
+            // transports: ["polling", "websocket"],
+            transports: ["websocket"],
             query: {
                 MemberId: (_c = _1.default.member) === null || _c === void 0 ? void 0 : _c.id,
                 AppId: (_d = _1.default.app) === null || _d === void 0 ? void 0 : _d.id,
@@ -3987,6 +3988,7 @@ var ChattyList = /** @class */ (function () {
         var _a, _b, _c;
         var url =  false ? 0 : "wss://".concat(dev, "socket.chatty-cloud.com");
         this.socket = (0, socket_io_client_1.default)("".concat(url, "/chatlist.").concat((_a = _1.default.app) === null || _a === void 0 ? void 0 : _a.name), {
+            // transports: ["websocket"],
             transports: ["polling", "websocket"],
             query: {
                 MemberId: (_b = _1.default.member) === null || _b === void 0 ? void 0 : _b.id,
@@ -4326,7 +4328,7 @@ var Chatty = /** @class */ (function () {
                         return [3 /*break*/, 4];
                     case 3:
                         err_1 = _d.sent();
-                        console.warn(":: ChattyClient init fail %O", err_1);
+                        console.warn(":: ChattyClient init fail", err_1.message);
                         return [3 /*break*/, 4];
                     case 4: return [2 /*return*/];
                 }
