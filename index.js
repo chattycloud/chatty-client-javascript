@@ -4509,37 +4509,31 @@ var Chatty = /** @class */ (function () {
         });
     };
     Chatty.validateFiles = function (files) {
-        return __awaiter(this, void 0, void 0, function () {
-            var _this = this;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4 /*yield*/, Promise.all(files.map(function (file) { return __awaiter(_this, void 0, void 0, function () {
-                            var _a, _b;
-                            return __generator(this, function (_c) {
-                                if (!file.type) {
-                                    console.warn('File type is not defined');
-                                }
-                                if (file.type.split('/')[0] === 'image' && !((_a = this.app) === null || _a === void 0 ? void 0 : _a.enableImageUpload)) {
-                                    console.warn('Image upload is not enabled');
-                                }
-                                if (file.type.split('/')[0] === 'video' && !((_b = this.app) === null || _b === void 0 ? void 0 : _b.enableVideoUpload)) {
-                                    console.warn('Video upload is not enabled');
-                                }
-                                if (file.type.split('/')[0] === 'image' && !Types_1.SupportedImageFormat.includes(file.type)) {
-                                    console.warn("Image format '".concat(file.type, "' is not supported"));
-                                }
-                                if (file.type.split('/')[0] === 'video' && !Types_1.SupportedVideoFormat.includes(file.type)) {
-                                    console.warn("Video format '".concat(file.type, "' is not supported"));
-                                }
-                                return [2 /*return*/];
-                            });
-                        }); }))];
-                    case 1:
-                        _a.sent();
-                        return [2 /*return*/];
-                }
-            });
+        var _this = this;
+        files.map(function (file) {
+            var _a, _b;
+            if (!file.type) {
+                console.warn('File type is not defined');
+                return false;
+            }
+            if (file.type.split('/')[0] === 'image' && !((_a = _this.app) === null || _a === void 0 ? void 0 : _a.enableImageUpload)) {
+                console.warn('Image upload is not enabled');
+                return false;
+            }
+            if (file.type.split('/')[0] === 'video' && !((_b = _this.app) === null || _b === void 0 ? void 0 : _b.enableVideoUpload)) {
+                console.warn('Video upload is not enabled');
+                return false;
+            }
+            if (file.type.split('/')[0] === 'image' && !Types_1.SupportedImageFormat.includes(file.type)) {
+                console.warn("Image format '".concat(file.type, "' is not supported"));
+                return false;
+            }
+            if (file.type.split('/')[0] === 'video' && !Types_1.SupportedVideoFormat.includes(file.type)) {
+                console.warn("Video format '".concat(file.type, "' is not supported"));
+                return false;
+            }
         });
+        return true;
     };
     /**
      * @description FileType 형식을 준수해야함 . type이 없는경우 cloudflare에서 Network error를 반환함
@@ -4558,9 +4552,14 @@ var Chatty = /** @class */ (function () {
                                 case 0:
                                     _a.trys.push([0, 2, , 3]);
                                     if (!(files === null || files === void 0 ? void 0 : files.length)) {
-                                        console.warn('uploadFiles function parameter "files" is empty');
+                                        reject(':: ChattyClient uploadFiles - files param is empty');
                                     }
-                                    Chatty.validateFiles(files);
+                                    if (files.length > 4) {
+                                        reject(':: ChattyClient uploadFiles - number of files can not be over 4');
+                                    }
+                                    if (!Chatty.validateFiles(files)) {
+                                        reject(':: ChattyClient uploadFiles - file validatations are failed');
+                                    }
                                     return [4 /*yield*/, Promise.all(files.map(function (file) { return __awaiter(_this, void 0, void 0, function () {
                                             var resUploadUrl, uploadURL, form, resUpload;
                                             return __generator(this, function (_a) {
@@ -4568,6 +4567,7 @@ var Chatty = /** @class */ (function () {
                                                     case 0: return [4 /*yield*/, axios_1.default.get('/uploadurl')];
                                                     case 1:
                                                         resUploadUrl = _a.sent();
+                                                        console.debug('GET /uploadurl ', resUploadUrl.data);
                                                         uploadURL = resUploadUrl.data.uploadURL;
                                                         form = new FormData();
                                                         form.append('file', file);

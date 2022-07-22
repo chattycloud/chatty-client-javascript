@@ -30,7 +30,7 @@ declare class Chatty {
      */
     static upsertMember(member: Partial<MemberType>): Promise<MemberType>;
     static deleteMember(MemberId: string): Promise<any>;
-    static validateFiles(files: Array<FileType>): Promise<void>;
+    static validateFiles(files: Array<FileType>): Boolean;
     /**
      * @description FileType 형식을 준수해야함 . type이 없는경우 cloudflare에서 Network error를 반환함
      * @param file
