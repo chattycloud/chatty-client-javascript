@@ -4568,12 +4568,13 @@ var Chatty = /** @class */ (function () {
                                                     case 1:
                                                         resUploadUrl = _a.sent();
                                                         console.debug('GET /uploadurl ', resUploadUrl.data);
-                                                        uploadURL = resUploadUrl.data.uploadURL;
+                                                        uploadURL = resUploadUrl.data.result.uploadURL;
                                                         form = new FormData();
                                                         form.append('file', file);
                                                         return [4 /*yield*/, axios_1.default.post(uploadURL, form)];
                                                     case 2:
                                                         resUpload = _a.sent();
+                                                        console.debug("POST /".concat(uploadURL, " "), resUpload.data);
                                                         return [2 /*return*/, { uri: resUpload.data.variants.find(function (e) { var _a; return e.endsWith("".concat((_a = Chatty.app) === null || _a === void 0 ? void 0 : _a.thumbnailSize)); }) }];
                                                 }
                                             });
