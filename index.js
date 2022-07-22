@@ -4405,7 +4405,7 @@ var Chatty = /** @class */ (function () {
             });
         });
     };
-    Chatty.updateChat = function (chat) {
+    Chatty.upsertChat = function (chat) {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {

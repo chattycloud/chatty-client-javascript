@@ -9,7 +9,7 @@ declare class Chatty {
     static exit(): Promise<void>;
     static generateDistinctKey(data: Array<string> | string): string;
     static createChat(chat: Partial<ChatType>): Promise<ChatType>;
-    static updateChat(chat: Partial<ChatType>): Promise<ChatType>;
+    static upsertChat(chat: Partial<ChatType>): Promise<ChatType>;
     /**
      * @description
      * non-socket api for create message. commonly used for user custom system message
