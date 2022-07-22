@@ -3828,7 +3828,7 @@ var ChattyChat = /** @class */ (function () {
             return;
         }
         if (files.length > 4) {
-            console.warn(':: ChattyChat sendFileMessage function param error: files length can not exceed 4');
+            console.warn(':: ChattyChat sendFileMessage function param error: number of files can not be over 4');
             return;
         }
         var message = {
@@ -4554,9 +4554,6 @@ var Chatty = /** @class */ (function () {
                                     if (!(files === null || files === void 0 ? void 0 : files.length)) {
                                         reject(':: ChattyClient uploadFiles - files param is empty');
                                     }
-                                    if (files.length > 4) {
-                                        reject(':: ChattyClient uploadFiles - number of files can not be over 4');
-                                    }
                                     if (!Chatty.validateFiles(files)) {
                                         reject(':: ChattyClient uploadFiles - file validatations are failed');
                                     }
@@ -4574,7 +4571,7 @@ var Chatty = /** @class */ (function () {
                                                         return [4 /*yield*/, axios_1.default.post(uploadURL, form)];
                                                     case 2:
                                                         resUpload = _a.sent();
-                                                        console.debug("POST /".concat(uploadURL, " "), resUpload.data);
+                                                        console.debug("POST ".concat(uploadURL, " "), resUpload.data);
                                                         return [2 /*return*/, { uri: resUpload.data.result.variants.find(function (e) { var _a; return e.endsWith("".concat((_a = Chatty.app) === null || _a === void 0 ? void 0 : _a.thumbnailSize)); }) }];
                                                 }
                                             });
@@ -4614,7 +4611,7 @@ var Chatty = /** @class */ (function () {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_c) {
                 switch (_c.label) {
-                    case 0: return [4 /*yield*/, axios_1.default.post("/leave", { AppId: (_a = this.app) === null || _a === void 0 ? void 0 : _a.id, ChatId: ChatId, MemberId: (_b = this.member) === null || _b === void 0 ? void 0 : _b.id })
+                    case 0: return [4 /*yield*/, axios_1.default.delete("/leave?AppId=".concat((_a = this.app) === null || _a === void 0 ? void 0 : _a.id, "&ChatId=").concat(ChatId, "&MemberId=").concat((_b = this.member) === null || _b === void 0 ? void 0 : _b.id))
                             .then(function (res) { return Promise.resolve(res.data); })
                             .catch(function (err) { return Promise.reject(err.response.data.response || err.response.data); })];
                     case 1:
@@ -4650,7 +4647,7 @@ var Chatty = /** @class */ (function () {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_b) {
                 switch (_b.label) {
-                    case 0: return [4 /*yield*/, axios_1.default.post("/exclude", { AppId: (_a = this.app) === null || _a === void 0 ? void 0 : _a.id, ChatId: ChatId, MemberIds: MemberIds })
+                    case 0: return [4 /*yield*/, axios_1.default.delete("/exclude?AppId=".concat((_a = this.app) === null || _a === void 0 ? void 0 : _a.id, "&ChatId=").concat(ChatId, "&MemberIds=").concat(MemberIds.toString()))
                             .then(function (res) { return Promise.resolve(res.data); })
                             .catch(function (err) { return Promise.reject(err.response.data.response || err.response.data); })];
                     case 1:
