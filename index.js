@@ -4444,7 +4444,7 @@ var Chatty = /** @class */ (function () {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_b) {
                 switch (_b.label) {
-                    case 0: return [4 /*yield*/, axios_1.default.get("/missed-count?MemberIds=".concat((_a = this.member) === null || _a === void 0 ? void 0 : _a.id))
+                    case 0: return [4 /*yield*/, axios_1.default.get("/missed-count?MemberId=".concat((_a = this.member) === null || _a === void 0 ? void 0 : _a.id))
                             .then(function (res) { return Promise.resolve(res.data); })
                             .catch(function (err) {
                             // console.warn(':: ChattyClient getMissedCount fail', err.response.data.response || err.response.data);
@@ -4563,19 +4563,18 @@ var Chatty = /** @class */ (function () {
                                     Chatty.validateFiles(files);
                                     return [4 /*yield*/, Promise.all(files.map(function (file) { return __awaiter(_this, void 0, void 0, function () {
                                             var resUploadUrl, uploadURL, form, resUpload;
-                                            var _a;
-                                            return __generator(this, function (_b) {
-                                                switch (_b.label) {
-                                                    case 0: return [4 /*yield*/, axios_1.default.get('/file/upload')];
+                                            return __generator(this, function (_a) {
+                                                switch (_a.label) {
+                                                    case 0: return [4 /*yield*/, axios_1.default.get('/uploadurl')];
                                                     case 1:
-                                                        resUploadUrl = _b.sent();
+                                                        resUploadUrl = _a.sent();
                                                         uploadURL = resUploadUrl.data.uploadURL;
                                                         form = new FormData();
                                                         form.append('file', file);
                                                         return [4 /*yield*/, axios_1.default.post(uploadURL, form)];
                                                     case 2:
-                                                        resUpload = _b.sent();
-                                                        return [2 /*return*/, { uri: "https://imagedelivery.net/Se1RT11x0rciKkirEISyIg/".concat(resUpload.data.id, "/").concat((_a = Chatty.app) === null || _a === void 0 ? void 0 : _a.thumbnailSize) }];
+                                                        resUpload = _a.sent();
+                                                        return [2 /*return*/, { uri: resUpload.data.variants.find(function (e) { var _a; return e.endsWith("".concat((_a = Chatty.app) === null || _a === void 0 ? void 0 : _a.thumbnailSize)); }) }];
                                                 }
                                             });
                                         }); }))];
