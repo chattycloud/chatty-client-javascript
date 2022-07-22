@@ -1,6 +1,6 @@
 {
   "name": "chatty-client",
-  "version": "0.0.38",
+  "version": "0.0.39",
   "description": "Front side client sdk to use chatty cloud service",
   "main": "index.js",
   "types": "index.d.ts",
