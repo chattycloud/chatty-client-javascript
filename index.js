@@ -4575,7 +4575,7 @@ var Chatty = /** @class */ (function () {
                                                     case 2:
                                                         resUpload = _a.sent();
                                                         console.debug("POST /".concat(uploadURL, " "), resUpload.data);
-                                                        return [2 /*return*/, { uri: resUpload.data.variants.find(function (e) { var _a; return e.endsWith("".concat((_a = Chatty.app) === null || _a === void 0 ? void 0 : _a.thumbnailSize)); }) }];
+                                                        return [2 /*return*/, { uri: resUpload.data.result.variants.find(function (e) { var _a; return e.endsWith("".concat((_a = Chatty.app) === null || _a === void 0 ? void 0 : _a.thumbnailSize)); }) }];
                                                 }
                                             });
                                         }); }))];
