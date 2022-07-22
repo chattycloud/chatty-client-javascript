@@ -8,8 +8,8 @@ declare class Chatty {
     static init(payload: IInitializePayloads): Promise<void>;
     static exit(): Promise<void>;
     static generateDistinctKey(data: Array<string> | string): string;
-    static createChat(chat: ChatType): Promise<ChatType>;
-    static updateChat(chat: ChatType): Promise<ChatType>;
+    static createChat(chat: Partial<ChatType>): Promise<ChatType>;
+    static updateChat(chat: Partial<ChatType>): Promise<ChatType>;
     /**
      * @description
      * non-socket api for create message. commonly used for user custom system message
