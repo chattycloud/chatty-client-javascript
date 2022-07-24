@@ -101,7 +101,7 @@ export declare type ChatType = {
     name: string;
     image: string;
     lastMessage: MessageType | null;
-    data: object | null;
+    data: any | null;
     distinctKey: string;
     group: string;
     maxMember: number;
@@ -132,7 +132,7 @@ export declare type MemberType = {
     device: DeviceType | null;
     group: string;
     permission: MemberPermissionType;
-    data: object | null;
+    data: any | null;
     createdAt: Date;
     updatedAt: Date;
     deletedAt: Date | null;
@@ -144,7 +144,7 @@ export declare type MessageType = {
     files: Array<{
         uri: string;
     }> | null;
-    json: object | null;
+    json: any | null;
     type: MessageTypeEnum;
     translation: ITranslationIndexSignature | null;
     by: MessageByEnum;
@@ -205,18 +205,18 @@ export declare enum ChattyNotificationType {
     CHATTY_SYSTEM_MESSAGE = "CHATTY_SYSTEM_MESSAGE"
 }
 export interface IChatConnectPayload {
-    at?: string | undefined;
-    with?: string | string[] | undefined;
-    distinctKey?: string | null | undefined;
-    public?: boolean | undefined;
-    name?: string | undefined;
-    image?: string | undefined;
+    at?: string;
+    with?: string | string[];
+    distinctKey?: string;
+    public?: boolean;
+    name?: string;
+    image?: string;
     data?: any;
-    group?: string | undefined;
+    group?: string;
 }
 export interface IFetchChatListPayload {
-    refresh: boolean | undefined;
-    group: string | undefined;
+    refresh?: boolean;
+    group?: string;
 }
 export interface IUpdateChatListPayload {
     ChatId: string;
