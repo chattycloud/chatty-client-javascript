@@ -137,6 +137,7 @@ export declare type MemberType = {
     updatedAt: Date;
     deletedAt: Date | null;
     AppId: string;
+    Apps: Array<AppUserType>;
 };
 export declare type MessageType = {
     id: string;
