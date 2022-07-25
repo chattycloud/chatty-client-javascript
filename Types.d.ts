@@ -94,6 +94,7 @@ export declare type UserType = {
     createdAt: Date;
     updatedAt: Date;
     deletedAt: Date | null;
+    Apps: Array<AppUserType>;
 };
 export declare type ChatType = {
     id: string;
@@ -137,7 +138,7 @@ export declare type MemberType = {
     updatedAt: Date;
     deletedAt: Date | null;
     AppId: string;
-    Apps: Array<AppUserType>;
+    App: AppType;
 };
 export declare type MessageType = {
     id: string;
