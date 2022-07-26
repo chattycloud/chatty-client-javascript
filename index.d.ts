@@ -15,11 +15,10 @@ declare class Chatty {
      */
     static generateDistinctKey(data: Array<string> | string): string | undefined;
     /**
-     * @description
-     * static method createChat is for create chat. and if distinctKey is already exist, then update and return existing chat
+     * @description static method createChat is for create chat. and if distinctKey is already exist, then update and return existing chat
      * @param {ChatType} chat
-     * @param {Array<Member>} Members - (optional) array of member ids.
-     * @param {MessageType} Message - (optional) message to be sent when chat is created
+     * @param {Array<MemberType>=} Members - (optional) array of member ids.
+     * @param {MessageType=} Message - (optional) message to be sent when chat is created
      * @returns {Promise<ChatType>}
      */
     static createChat(chat: Partial<ChatType>, Members?: Array<string>, Message?: Partial<MessageType>): Promise<ChatType>;
