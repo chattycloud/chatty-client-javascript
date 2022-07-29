@@ -110,18 +110,10 @@ export declare type ChatType = {
     updatedAt: Date;
     deletedAt: Date | null;
     AppId: string;
-    Members: Array<ChatMemberType>;
-};
-export declare type ChatMemberType = {
-    missedCount: number;
-    role: ChatMemberRoleEnum;
-    group: string;
-    createdAt: Date;
-    updatedAt: Date;
-    ChatId: string;
-    MemberId: string;
-    Member: MemberType;
-    AppId: string;
+    Members: Array<MemberType & {
+        missedCount: number;
+        role: ChatMemberRoleEnum;
+    }>;
 };
 export declare type MemberType = {
     id: string;
@@ -236,8 +228,6 @@ export declare type ErrorResponseType = {
     message: string;
 };
 export declare type ChatConnectResponseType = ChatType & {
-    Members: Array<MemberType>;
-} & {
     error: ErrorResponseType;
 };
 export declare type ChatDisconnectResponseType = {} & {
@@ -270,9 +260,7 @@ export declare type MessagesUpdateResponseType = Array<MessageType> & {
 export declare type ChatListFetchResponseType = {
     refresh: boolean;
     hasNext: boolean;
-    chats: Array<ChatType & {
-        Members: Array<MemberType>;
-    }>;
+    chats: Array<ChatType>;
 } & {
     error: ErrorResponseType;
 };
@@ -282,8 +270,6 @@ export declare type ChatListUpdateResponseType = {
     error: ErrorResponseType;
 };
 export declare type ChatRefreshResponseType = ChatType & {
-    Members: Array<MemberType>;
-} & {
     error: ErrorResponseType;
 };
 /** Chat Handlers */
