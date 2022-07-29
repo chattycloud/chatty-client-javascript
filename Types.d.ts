@@ -216,13 +216,11 @@ export interface IUpdateChatListPayload {
     ChatId: string;
 }
 export interface IMissedCount {
-    missedCount: {
-        total: number;
-        group: Array<{
-            name: string;
-            count: number;
-        }>;
-    };
+    total: number;
+    group: Array<{
+        name: string;
+        count: number;
+    }>;
 }
 export declare type ErrorResponseType = {
     message: string;

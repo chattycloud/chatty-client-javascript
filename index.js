@@ -4337,17 +4337,18 @@ var Chatty = /** @class */ (function () {
         });
     };
     Chatty.exit = function () {
+        var _a;
         return __awaiter(this, void 0, void 0, function () {
             var err_2;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
+            return __generator(this, function (_b) {
+                switch (_b.label) {
                     case 0:
-                        _a.trys.push([0, 3, , 4]);
+                        _b.trys.push([0, 3, , 4]);
                         if (!this.member) return [3 /*break*/, 2];
-                        return [4 /*yield*/, this.upsertMember({ id: this.member.id, deviceToken: '' })];
+                        return [4 /*yield*/, this.upsertMember(__assign(__assign({}, this.member), { deviceToken: '', AppId: (_a = this.app) === null || _a === void 0 ? void 0 : _a.id }))];
                     case 1:
-                        _a.sent();
-                        _a.label = 2;
+                        _b.sent();
+                        _b.label = 2;
                     case 2:
                         axiosHeaderConfig();
                         this.apiKey = undefined;
@@ -4355,7 +4356,7 @@ var Chatty = /** @class */ (function () {
                         this.member = undefined;
                         return [3 /*break*/, 4];
                     case 3:
-                        err_2 = _a.sent();
+                        err_2 = _b.sent();
                         console.warn(':: ChattyClient EXIT Fail ', err_2.message);
                         return [3 /*break*/, 4];
                     case 4: return [2 /*return*/];
@@ -4402,11 +4403,10 @@ var Chatty = /** @class */ (function () {
         return MD5(JSON.stringify(distinct));
     };
     /**
-     * @description
-     * static method createChat is for create chat. and if distinctKey is already exist, then update and return existing chat
+     * @description static method createChat is for create chat. and if distinctKey is already exist, then update and return existing chat
      * @param {ChatType} chat
-     * @param {Array<Member>} Members - (optional) array of member ids.
-     * @param {MessageType} Message - (optional) message to be sent when chat is created
+     * @param {Array<MemberType>=} Members - (optional) array of member ids.
+     * @param {MessageType=} Message - (optional) message to be sent when chat is created
      * @returns {Promise<ChatType>}
      */
     Chatty.createChat = function (chat, Members, Message) {
