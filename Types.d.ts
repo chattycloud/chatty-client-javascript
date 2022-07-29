@@ -236,12 +236,16 @@ export declare type ErrorResponseType = {
     message: string;
 };
 export declare type ChatConnectResponseType = ChatType & {
+    Members: Array<MemberType>;
+} & {
     error: ErrorResponseType;
 };
 export declare type ChatDisconnectResponseType = {} & {
     error: ErrorResponseType;
 };
-export declare type ChatListConnectResponseType = {} & {
+export declare type ChatListConnectResponseType = {
+    socketId: string;
+} & {
     error: ErrorResponseType;
 };
 export declare type ChatListDisconnectResponseType = {} & {
@@ -266,7 +270,9 @@ export declare type MessagesUpdateResponseType = Array<MessageType> & {
 export declare type ChatListFetchResponseType = {
     refresh: boolean;
     hasNext: boolean;
-    chats: Array<ChatType>;
+    chats: Array<ChatType & {
+        Members: Array<MemberType>;
+    }>;
 } & {
     error: ErrorResponseType;
 };
@@ -276,6 +282,8 @@ export declare type ChatListUpdateResponseType = {
     error: ErrorResponseType;
 };
 export declare type ChatRefreshResponseType = ChatType & {
+    Members: Array<MemberType>;
+} & {
     error: ErrorResponseType;
 };
 /** Chat Handlers */

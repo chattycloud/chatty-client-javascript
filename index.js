@@ -4337,18 +4337,17 @@ var Chatty = /** @class */ (function () {
         });
     };
     Chatty.exit = function () {
-        var _a;
         return __awaiter(this, void 0, void 0, function () {
             var err_2;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
                     case 0:
-                        _b.trys.push([0, 3, , 4]);
+                        _a.trys.push([0, 3, , 4]);
                         if (!this.member) return [3 /*break*/, 2];
-                        return [4 /*yield*/, this.upsertMember(__assign(__assign({}, this.member), { deviceToken: '', AppId: (_a = this.app) === null || _a === void 0 ? void 0 : _a.id }))];
+                        return [4 /*yield*/, this.upsertMember({ id: this.member.id, deviceToken: '' })];
                     case 1:
-                        _b.sent();
-                        _b.label = 2;
+                        _a.sent();
+                        _a.label = 2;
                     case 2:
                         axiosHeaderConfig();
                         this.apiKey = undefined;
@@ -4356,7 +4355,7 @@ var Chatty = /** @class */ (function () {
                         this.member = undefined;
                         return [3 /*break*/, 4];
                     case 3:
-                        err_2 = _b.sent();
+                        err_2 = _a.sent();
                         console.warn(':: ChattyClient EXIT Fail ', err_2.message);
                         return [3 /*break*/, 4];
                     case 4: return [2 /*return*/];
@@ -4403,10 +4402,11 @@ var Chatty = /** @class */ (function () {
         return MD5(JSON.stringify(distinct));
     };
     /**
-     * @description static method createChat is for create chat. and if distinctKey is already exist, then update and return existing chat
+     * @description
+     * static method createChat is for create chat. and if distinctKey is already exist, then update and return existing chat
      * @param {ChatType} chat
-     * @param {Array<MemberType>=} Members - (optional) array of member ids.
-     * @param {MessageType=} Message - (optional) message to be sent when chat is created
+     * @param {Array<Member>} Members - (optional) array of member ids.
+     * @param {MessageType} Message - (optional) message to be sent when chat is created
      * @returns {Promise<ChatType>}
      */
     Chatty.createChat = function (chat, Members, Message) {
@@ -4416,8 +4416,15 @@ var Chatty = /** @class */ (function () {
             return __generator(this, function (_c) {
                 switch (_c.label) {
                     case 0: return [4 /*yield*/, axios_1.default.post('/chats', __assign(__assign({}, chat), { Members: Members === null || Members === void 0 ? void 0 : Members.map(function (MemberId) { var _a; return ({ MemberId: MemberId, AppId: (_a = _this.app) === null || _a === void 0 ? void 0 : _a.id }); }), Messages: [__assign(__assign({}, Message), { AppId: (_a = this.app) === null || _a === void 0 ? void 0 : _a.id, by: Types_1.MessageByEnum.SYSTEM })], AppId: (_b = this.app) === null || _b === void 0 ? void 0 : _b.id }))
-                            .then(function (res) { return Promise.resolve(res.data); })
-                            .catch(function (err) { return Promise.reject(err.response.data.response || err.response.data); })];
+                            .then(function (res) {
+                            console.debug(':: ChattyClient createChat', res.data);
+                            // Promise.resolve(res.data); 
+                            return res.data;
+                        })
+                            .catch(function (err) {
+                            console.warn(':: ChattyClient createChat error', err.response.data.response || err.response.data);
+                            Promise.reject(err.response.data.response || err.response.data);
+                        })];
                     case 1: return [2 /*return*/, _c.sent()];
                 }
             });
